@@ -229,7 +229,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     setFixedTxHash("");
 
     if (!poolTokenContract) {
-      setFixedError("Pool token contract not initialized.");
+      setFixedError("Please Connect Wallet.");
       return;
     }
 
