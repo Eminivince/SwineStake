@@ -40,16 +40,16 @@ const Navbar = () => {
         {/* Desktop Navigation and ConnectButton */}
         <div className="hidden md:flex items-center space-x-6">
           <ul className="flex space-x-6 bg-[#BB4938] py-3 px-6 rounded-3xl opacity-90">
-            <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#ae3d2c] hover:p-1 hover:px-3 hover:rounded-xl transition duration-300">
+            <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#1c0a08]  hover:px-3 hover:rounded-xl transition duration-300">
               <Link to="/">Home</Link>
             </li>
-            <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#ae3d2c] hover:p-1 hover:px-3 hover:rounded-xl transition duration-300">
+            <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#1c0a08]  hover:px-3 hover:rounded-xl transition duration-300">
               <Link to="/how-it-works">How it Works</Link>
             </li>
-            <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#ae3d2c] hover:p-1 hover:px-3 hover:rounded-xl transition duration-300">
+            {/* <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#1c0a08]  hover:px-3 hover:rounded-xl transition duration-300">
               <Link to="/features">Features</Link>
-            </li>
-            <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#ae3d2c] hover:p-1 hover:px-3 hover:rounded-xl transition duration-300">
+            </li> */}
+            <li className="font-semibold cursor-pointer hover:brightness-125 hover:bg-[#1c0a08]  hover:px-3 hover:rounded-xl transition duration-300">
               <Link to="/stake">Stake</Link>
             </li>
           </ul>
@@ -122,7 +122,7 @@ const Navbar = () => {
 
               {/* ConnectButton inside mobile menu */}
               <div className="mt-auto">
-                <ConnectButton chainStatus="full" showBalance="true"/>
+                <ConnectButton chainStatus="full" showBalance="true" />
               </div>
             </motion.div>
           </motion.div>

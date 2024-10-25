@@ -439,7 +439,7 @@ const FixedStakeComponent = ({ isConnected }) => {
   };
 
   return (
-    <div className="bg-[#BB4938]/20 w-full p-6 rounded-xl shadow-lg">
+    <div className="bg-[#BB4938]/20 md:w-[400px] mx-auto p-6 rounded-xl shadow-lg">
       {/* Header */}
       {/* <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse">
         Fixed
@@ -584,7 +584,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-4 mt-12">Your Stakes</h3>
         {fixedStakes.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:flex md:flex-col grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {fixedStakes.map((stake) => (
               <div
                 key={stake.stakeId}

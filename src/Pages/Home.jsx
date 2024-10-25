@@ -52,7 +52,7 @@ const Home = () => {
         animate="visible">
         {/* Main Heading */}
         <motion.h1
-          className="md:text-[70px] text-[30px] font-bold text-center leading-snug text-gradient"
+          className="md:text-[70px] text-[30px] md:mt-36 font-bold text-center leading-snug text-gradient"
           variants={itemVariants}>
           Earn Rewards by Staking
           <br /> Your Swine
@@ -81,13 +81,11 @@ const Home = () => {
           className="absolute md:-top-16 top-[55px] z-0 w-[300px] md:w-[750px] pointer-events-none"
           variants={itemVariants}
         />
-        <div>
-            
-        </div>
+        <div></div>
         <motion.img
           src={Winged}
           alt="Winged Swine"
-          className="absolute md:right-10 right-2 z-0 w-[150px] md:w-[750px] pointer-events-none opacity-0"
+          className="absolute md:right-10 right-2 z-0 w-[150px] md:w-[250px] pointer-events-none opacity-50"
           variants={itemVariants}
         />
 
@@ -98,12 +96,12 @@ const Home = () => {
           initial="hidden"
           animate="visible">
           <motion.h1
-            className="text-center md:text-[50px] text-[30px] mb-4"
+            className="text-center md:text-[70px] text-[30px] mb-4 text-gradient"
             variants={itemVariants}>
             How it works
           </motion.h1>
           <motion.p
-            className="text-center md:text-[25px] mb-8"
+            className="text-center md:text-[40px] mb-8 text-gradient"
             variants={itemVariants}>
             Staking involves holding and locking up your token to support a{" "}
             blockchain network, and earning rewards for contributing.
@@ -111,7 +109,7 @@ const Home = () => {
 
           {/* Steps */}
           <motion.div
-            className="flex md:flex-row flex-col md:space-x-8 space-y-8 mt-12"
+            className="flex md:flex-row flex-col md:space-x-8 md:space-y-0 space-y-8 md:mt-20 mt-12"
             variants={containerVariants}
             initial="hidden"
             animate="visible">
@@ -173,13 +171,13 @@ const Home = () => {
           initial="hidden"
           animate="visible">
           <motion.h1
-            className="md:text-[50px] text-[25px] font-bold text-center mb-8"
+            className="md:text-[50px] text-[25px] font-bold text-center mb-8 text-gradient"
             variants={itemVariants}>
             Features
           </motion.h1>
 
           <motion.div
-            className="flex md:flex-row flex-col md:space-x-8 space-y-8"
+            className="flex md:flex-row flex-col md:space-x-8 md:space-y-0 space-y-8"
             variants={containerVariants}
             initial="hidden"
             animate="visible">

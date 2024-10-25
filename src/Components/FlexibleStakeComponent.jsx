@@ -584,9 +584,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
   };
 
   return (
-    <div className="bg-[#BB4938]/20 w-full p-6 rounded-xl shadow-lg">
-      
-
+    <div className="bg-[#BB4938]/20 w-[400px] mx-auto p-6 rounded-xl shadow-lg">
       {/* Enhanced Wallet Segment */}
       {isConnected && (
         <div className="mb-6">
@@ -647,7 +645,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         {/* Amount Input */}
         <div className="mb-4">
           <label htmlFor="flexibleAmount" className="block mb-2 text-lg">
-            Amount to Stake:
+            Stake Swine:
           </label>
           <input
             id="flexibleAmount"
@@ -719,9 +717,9 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         {flexibleStake ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between">
-              <div></div>
+              <div className="md:hidden"></div>
               {/* Integrated Rewards and Claim Button */}
-              <div className="mt-4 sm:mt-0 sm:text-right">
+              <div className="mt-4 sm:mt-0 sm:text-right w-full">
                 <p className="text-center">
                   <strong>Accumulated Rewards:</strong>
                   <br />{" "}
@@ -752,7 +750,10 @@ const FlexibleStakeComponent = ({ isConnected }) => {
             </div>
 
             <p className="mt-10 text-center">
-              <strong>Time left to unstake without forfeiting accumulated but unclaimed rewards:</strong>{" "}
+              <strong>
+                Time left to unstake without forfeiting accumulated but
+                unclaimed rewards:
+              </strong>{" "}
               {flexibleTimeLeft > 0 ? (
                 <span className="text-green-500">
                   {formatTime(flexibleTimeLeft)}
@@ -774,7 +775,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
               <label
                 htmlFor="flexibleUnstakeAmount"
                 className="block mb-2 text-lg">
-                Unstake:
+                Unstake Swine:
               </label>
               <input
                 id="flexibleUnstakeAmount"
@@ -784,7 +785,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                 placeholder="Enter amount"
                 value={flexibleUnstakeAmount}
                 onChange={(e) => setFlexibleUnstakeAmount(e.target.value)}
-                className="w-full p-4 bg-black border border-red-600 rounded-xl text-right text-lg outline-none focus:border-red-700 transition duration-150"
+                className="w-full p-4 bg-black border border-orange-600 rounded-xl text-right text-lg outline-none focus:border-red-700 transition duration-150"
                 required
               />
               <motion.button
