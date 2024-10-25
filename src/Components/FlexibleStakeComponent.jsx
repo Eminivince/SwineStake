@@ -16,8 +16,11 @@ const FlexibleStakeComponent = ({ isConnected }) => {
   const [poolTokenDecimals, setPoolTokenDecimals] = useState(18); // Default to 18 decimals
 
   const [flexibleAmount, setFlexibleAmount] = useState("");
-  const [flexibleStake, setFlexibleStake] = useState(null);
-  const [flexibleRewards, setFlexibleRewards] = useState(0);
+  const [flexibleStake, setFlexibleStake] = useState({
+    amount: "0",
+    lastClaimBlock: 0,
+  });
+  const [flexibleRewards, setFlexibleRewards] = useState("0");
   const [flexibleTimeLeft, setFlexibleTimeLeft] = useState(0); // Time left in seconds
   const [flexibleUnstakeAmount, setFlexibleUnstakeAmount] = useState("");
   const [isFlexibleStaking, setIsFlexibleStaking] = useState(false);
@@ -71,8 +74,11 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         setPoolTokenContract(null);
         setUserBalance("");
         setAllowance(0);
-        setFlexibleStake(null);
-        setFlexibleRewards(0);
+        setFlexibleStake({
+          amount: "0",
+          lastClaimBlock: 0,
+        });
+        setFlexibleRewards("0");
         setFlexibleTimeLeft(0);
         setFlexibleUnstakeAmount("");
         setFlexibleTxHash("");
@@ -174,6 +180,17 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         try {
           const address = await signer.getAddress();
           const stake = await stakeContract.flexibleStakes(address);
+
+          if (!stake || stake.amount.eq(0)) {
+            setFlexibleStake({
+              amount: "0",
+              lastClaimBlock: 0,
+            });
+            setFlexibleRewards("0");
+            setFlexibleTimeLeft(0);
+            return;
+          }
+
           setFlexibleStake({
             amount: formatUnits(stake.amount, poolTokenDecimals),
             lastClaimBlock: stake.lastClaimBlock.toNumber(),
@@ -204,6 +221,12 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         } catch (err) {
           console.error("Error fetching flexible stake data:", err);
           setFlexibleError("Failed to fetch flexible stake data.");
+          setFlexibleStake({
+            amount: "0",
+            lastClaimBlock: 0,
+          });
+          setFlexibleRewards("0");
+          setFlexibleTimeLeft(0);
         }
       }
     };
@@ -562,10 +585,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
 
   return (
     <div className="bg-[#BB4938]/20 w-full p-6 rounded-xl shadow-lg">
-      {/* Header */}
-      {/* <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse">
-        Flexible Staking
-      </h2> */}
+      
 
       {/* Enhanced Wallet Segment */}
       {isConnected && (
@@ -590,37 +610,26 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                 </svg>
               </div>
               <div>
-                <p className="text-gray-800 dark:text-gray-200 text-lg">
-                  <strong>Wallet Balance:</strong> {userBalance} Tokens
+                <p className="text-gray-800 dark:text-gray-200">
+                  <strong>Bal:</strong> {userBalance} $SWINE
                 </p>
                 <div className="flex items-center mt-2">
                   <p className="text-gray-600 dark:text-gray-400 text-sm break-words">
-                    <strong>Wallet Address:</strong> {truncatedAddress}
+                    <strong>Wallet:</strong> {truncatedAddress}
                   </p>
                   <button
                     onClick={copyWalletAddress}
-                    className="ml-2 text-gray-600 dark:text-gray-400 hover:text-[#BB4938] dark:hover:text-[#BB4938] transition-colors duration-200"
+                    className="ml-10 text-gray-600 dark:text-gray-400 hover:text-[#BB4938] dark:hover:text-[#BB4938] transition-colors duration-200"
                     aria-label="Copy Wallet Address">
                     <FiCopy size={18} />
                   </button>
                 </div>
-              </div>
-            </div>
-            {/* Pool Token Address */}
-            {/* {poolTokenAddress && (
-              <div className="flex items-center">
-                <p className="text-gray-800 dark:text-gray-200 text-lg">
-                  <strong>Pool Token:</strong>{" "}
-                  <a
-                    href={`https://airdao.io/explorer/address/${poolTokenAddress}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline break-words">
-                    {poolTokenAddress}
-                  </a>
+                <p className="mt-2">
+                  <strong>Staked :</strong> {flexibleStake?.amount || "0"}{" "}
+                  $SWINE
                 </p>
               </div>
-            )} */}
+            </div>
           </div>
         </div>
       )}
@@ -658,7 +667,8 @@ const FlexibleStakeComponent = ({ isConnected }) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
-          className="mt-2 bg-[#BB4938] p-3 w-full rounded-xl text-center font-semibold cursor-pointer hover:bg-[#ae3d2c] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+          className="mt-2 bg-[#BB4938] p-3 w-full rounded-xl text-center font-semibold cursor-pointer hover:bg-[#ae3d2c] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!flexibleAmount || isFlexibleStaking}>
           {isFlexibleStaking ? (
             <div className="flex items-center justify-center">
               <LoadingSpinner />
@@ -671,23 +681,6 @@ const FlexibleStakeComponent = ({ isConnected }) => {
           )}
         </motion.button>
       </form>
-
-      {/* Claim Rewards Button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={claimFlexibleRewards}
-        className="mt-4 bg-[#BB4938] p-3 w-full rounded-xl text-center font-semibold cursor-pointer hover:bg-[#ae3d2c] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={isFlexibleStaking || !flexibleStake}>
-        {isFlexibleStaking ? (
-          <div className="flex items-center justify-center">
-            <LoadingSpinner />
-            <span className="ml-2">Processing...</span>
-          </div>
-        ) : (
-          "Claim Rewards"
-        )}
-      </motion.button>
 
       {/* Transaction Hash */}
       {flexibleTxHash && (
@@ -720,21 +713,50 @@ const FlexibleStakeComponent = ({ isConnected }) => {
 
       {/* Display Flexible Stake Details */}
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4 mt-12">
-          Your Flexible Stake
+        <h3 className="text-lg text-center font-semibold mb-4 mt-12">
+          Your Stakes
         </h3>
         {flexibleStake ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-            <p className="text-lg">
-              <strong>Staked Amount:</strong> {flexibleStake.amount} Tokens
-            </p>
-            <p className="text-lg mt-2">
-              <strong>Accumulated Rewards:</strong> {flexibleRewards} Tokens
-            </p>
-            <p className="text-lg mt-2">
-              <strong>Time Left to Unstake Without Forfeiting Rewards:</strong>{" "}
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <div></div>
+              {/* Integrated Rewards and Claim Button */}
+              <div className="mt-4 sm:mt-0 sm:text-right">
+                <p className="text-center">
+                  <strong>Accumulated Rewards:</strong>
+                  <br />{" "}
+                  <span className="font-semibold">
+                    {flexibleRewards} $SWINE
+                  </span>
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={claimFlexibleRewards}
+                  className="bg-[#BB4938] p-2 rounded-xl w-full mt-3 text-center font-semibold cursor-pointer hover:bg-[#ae3d2c] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={
+                    isFlexibleStaking ||
+                    !flexibleStake ||
+                    Number(flexibleRewards) === 0
+                  }>
+                  {isFlexibleStaking ? (
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinner />
+                      <span className="ml-2">Processing...</span>
+                    </div>
+                  ) : (
+                    "Claim Rewards"
+                  )}
+                </motion.button>
+              </div>
+            </div>
+
+            <p className="mt-10 text-center">
+              <strong>Time left to unstake without forfeiting accumulated but unclaimed rewards:</strong>{" "}
               {flexibleTimeLeft > 0 ? (
-                <span>{formatTime(flexibleTimeLeft)}</span>
+                <span className="text-green-500">
+                  {formatTime(flexibleTimeLeft)}
+                </span>
               ) : (
                 <span className="text-green-500">
                   You can unstake now without forfeiting rewards.
@@ -752,7 +774,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
               <label
                 htmlFor="flexibleUnstakeAmount"
                 className="block mb-2 text-lg">
-                Amount to Unstake:
+                Unstake:
               </label>
               <input
                 id="flexibleUnstakeAmount"
@@ -769,7 +791,8 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="mt-4 bg-red-600 p-3 w-full rounded-xl text-center font-semibold cursor-pointer hover:bg-red-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                className="mt-4 bg-red-600 p-3 w-full rounded-xl text-center font-semibold cursor-pointer hover:bg-red-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!flexibleUnstakeAmount || isFlexibleStaking}>
                 {isFlexibleStaking ? (
                   <div className="flex items-center justify-center">
                     <LoadingSpinner />
@@ -782,7 +805,9 @@ const FlexibleStakeComponent = ({ isConnected }) => {
             </form>
           </div>
         ) : (
-          <p className="text-lg">You have no flexible stake to unstake.</p>
+          <p className="text-lg text-center">
+            You have no flexible stake to unstake.
+          </p>
         )}
       </div>
 

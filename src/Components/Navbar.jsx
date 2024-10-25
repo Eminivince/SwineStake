@@ -122,7 +122,7 @@ const Navbar = () => {
 
               {/* ConnectButton inside mobile menu */}
               <div className="mt-auto">
-                <ConnectButton chainStatus="full" showBalance="true" />
+                <ConnectButton chainStatus="full" showBalance="true"/>
               </div>
             </motion.div>
           </motion.div>

@@ -88,7 +88,7 @@ const FixedStakeComponent = ({ isConnected }) => {
           setPoolTokenAddress(tokenAddress);
         } catch (err) {
           console.error("Error fetching pool token address:", err);
-          setFixedError("Failed to fetch pool token information.");
+          setFixedError("Please Connect Wallet");
         }
       }
     };
@@ -110,7 +110,7 @@ const FixedStakeComponent = ({ isConnected }) => {
           setPoolTokenDecimals(decimals);
         } catch (err) {
           console.error("Error initializing pool token contract:", err);
-          setFixedError("Failed to initialize pool token contract.");
+          setFixedError("Please Connect Wallet.");
         }
       }
     };
@@ -419,7 +419,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       alert("Fixed unstaking successful!");
     } catch (err) {
       console.error("Error during fixed unstaking:", err);
-      setFixedError("An error occurred during fixed unstaking.");
+      setFixedError("Cannot Unstake yet.");
       setIsFixedStaking(false);
     }
   };
@@ -575,8 +575,8 @@ const FixedStakeComponent = ({ isConnected }) => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-4 p-2 bg-red-600 rounded">
-          <p className="text-lg">{fixedError}</p>
+          className="mt-4 p-2 bg-orange-600 rounded-xl">
+          <p className="text-lg text-center">{fixedError}</p>
         </motion.div>
       )}
 
@@ -650,8 +650,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                 Confirm Unstake
               </h3>
               <p className="mb-6 text-gray-700 dark:text-gray-300">
-                Are you sure you want to unstake Stake ID:{" "}
-                <strong>{selectedFixedStakeId}</strong>?
+                Are you sure you want to unstake?
               </p>
               <div className="flex justify-end space-x-4">
                 <motion.button
@@ -680,7 +679,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                 </motion.button>
               </div>
               {/* Display Transaction Hash */}
-              {fixedTxHash && (
+              {/* {fixedTxHash && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -696,14 +695,14 @@ const FixedStakeComponent = ({ isConnected }) => {
                     </a>
                   </p>
                 </motion.div>
-              )}
+              )} */}
               {/* Display Error */}
               {fixedError && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="mt-4 p-2 bg-red-600 dark:bg-red-700 rounded">
-                  <p className="text-lg text-white">{fixedError}</p>
+                  className="mt-4 p-2 bg-orange-600 dark:bg-red-700 rounded-xl">
+                  <p className="text-lg text-center text-white">{fixedError}</p>
                 </motion.div>
               )}
             </motion.div>

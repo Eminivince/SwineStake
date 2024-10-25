@@ -9,7 +9,7 @@ import SwineSpace from "../Images/maxispace.png";
 import Winged from "../Images/spitCash.png";
 import { Link } from "react-router-dom";
 import Navbar from "../Components/Navbar";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // Added AnimatePresence for potential modals
 
 const Home = () => {
   // Animation Variants
@@ -39,10 +39,14 @@ const Home = () => {
   };
 
   return (
-    <div className="bg-black text-white md:px-10 md:pt-10 pt-[180px] pb-10 md:bg-custom-radial">
+    <div className="relative bg-black text-white md:px-10 md:pt-10 pt-[180px] pb-10">
+      {/* Gradient Overlay */}
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-full h-1/3 bg-gradient-radial from-red-500 via-transparent to-transparent pointer-events-none"></div>
+
       <Navbar />
+
       <motion.section
-        className="mx-auto w-fit relative"
+        className="mx-auto w-fit relative z-10"
         variants={containerVariants}
         initial="hidden"
         animate="visible">
@@ -66,8 +70,7 @@ const Home = () => {
           className="bg-gradient-to-r from-white to-black text-[#BB4938] w-fit mx-auto mt-10 md:py-3 md:px-10 py-2 px-5 rounded-3xl z-50 hover:scale-110 cursor-pointer"
           variants={itemVariants}
           whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          variants={buttonVariants}>
+          whileTap={{ scale: 0.95 }}>
           <Link to="/stake">Get Started</Link>
         </motion.div>
 
@@ -78,6 +81,9 @@ const Home = () => {
           className="absolute md:-top-16 top-[55px] z-0 w-[300px] md:w-[750px] pointer-events-none"
           variants={itemVariants}
         />
+        <div>
+            
+        </div>
         <motion.img
           src={Winged}
           alt="Winged Swine"
