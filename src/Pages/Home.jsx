@@ -81,7 +81,7 @@ const Home = () => {
         <motion.img
           src={Winged}
           alt="Winged Swine"
-          className="absolute opacity-20 md:right-10 right-2 z-0 w-[150px] md:w-[750px] pointer-events-none"
+          className="absolute md:right-10 right-2 z-0 w-[150px] md:w-[750px] pointer-events-none opacity-0"
           variants={itemVariants}
         />
 

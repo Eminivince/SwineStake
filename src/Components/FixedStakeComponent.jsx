@@ -441,9 +441,9 @@ const FixedStakeComponent = ({ isConnected }) => {
   return (
     <div className="bg-[#BB4938]/20 w-full p-6 rounded-xl shadow-lg">
       {/* Header */}
-      <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse">
+      {/* <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse">
         Fixed
-      </h2>
+      </h2> */}
 
       {/* Enhanced Wallet Segment */}
       {isConnected && (
