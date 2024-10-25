@@ -1,4 +1,4 @@
-export const SwineStakeAddress = "0xE63850E57f63c2CBcacB25E2A15C4C768636E916";
+export const SwineStakeAddress = "0x8634c90C73ecFB9d440B9aB92BAb2E5Fb4958360";
 
 export const SwineABI = [
   {
@@ -12,26 +12,6 @@ export const SwineABI = [
         internalType: "address",
         name: "_rewardToken",
         type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "_fixedAPY",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_flexibleAPY",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_fixedLockPeriod",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_flexibleRewardInterval",
-        type: "uint256",
       },
     ],
     stateMutability: "nonpayable",
@@ -54,6 +34,44 @@ export const SwineABI = [
       },
     ],
     name: "APYUpdated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "oldAverageBlockTime",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "newAverageBlockTime",
+        type: "uint256",
+      },
+    ],
+    name: "AverageBlockTimeUpdated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "oldFixedLockPeriod",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "newFixedLockPeriod",
+        type: "uint256",
+      },
+    ],
+    name: "FixedLockPeriodUpdated",
     type: "event",
   },
   {
@@ -116,6 +134,25 @@ export const SwineABI = [
     anonymous: false,
     inputs: [
       {
+        indexed: false,
+        internalType: "uint256",
+        name: "oldFlexibleRewardInterval",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "newFlexibleRewardInterval",
+        type: "uint256",
+      },
+    ],
+    name: "FlexibleRewardIntervalUpdated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
         indexed: true,
         internalType: "address",
         name: "user",
@@ -171,20 +208,7 @@ export const SwineABI = [
   },
   {
     inputs: [],
-    name: "AVERAGE_BLOCK_TIME",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "BLOCKS_PER_YEAR",
+    name: "SCALE",
     outputs: [
       {
         internalType: "uint256",
@@ -198,6 +222,32 @@ export const SwineABI = [
   {
     inputs: [],
     name: "SECONDS_PER_YEAR",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "averageBlockTime",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "blocksPerYear",
     outputs: [
       {
         internalType: "uint256",
@@ -542,6 +592,45 @@ export const SwineABI = [
       },
     ],
     name: "updateAPYs",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_newAverageBlockTime",
+        type: "uint256",
+      },
+    ],
+    name: "updateAverageBlockTime",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_newFixedLockPeriod",
+        type: "uint256",
+      },
+    ],
+    name: "updateFixedLockPeriod",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_newFlexibleRewardInterval",
+        type: "uint256",
+      },
+    ],
+    name: "updateFlexibleRewardInterval",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
