@@ -108,11 +108,11 @@ const Navbar = () => {
                     How it Works
                   </Link>
                 </li>
-                <li className="font-semibold text-lg hover:underline bg-black p-3 rounded-lg active:opacity-50">
+                {/* <li className="font-semibold text-lg hover:underline bg-black p-3 rounded-lg active:opacity-50">
                   <Link to="/features" onClick={handleLinkClick}>
                     Features
                   </Link>
-                </li>
+                </li> */}
                 <li className="font-semibold text-lg hover:underline bg-black p-3 rounded-lg active:opacity-50">
                   <Link to="/stake" onClick={handleLinkClick}>
                     Stake
