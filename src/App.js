@@ -11,6 +11,7 @@ import { WagmiProvider } from "wagmi";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { http } from "wagmi";
 import { defineChain } from "viem";
+import HowItWorks from "./Pages/HowItWorks";
 
 const AirDAO = /*#__PURE__*/ defineChain({
   id: 16718,
@@ -52,6 +53,7 @@ const App = () => {
               <Route path="/" element={<Home />} />
               <Route path="stake" element={<Stake />} />
               <Route path="unstake" element={<Unstake />} />
+              <Route path="how-it-works" element={<HowItWorks />} />
             </Routes>
           </BrowserRouter>
         </RainbowKitProvider>
