@@ -6,6 +6,7 @@ import { SwineStakeAddress, SwineABI, ERC20ABI } from "../Utils/Contract";
 import { formatUnits } from "ethers/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingSpinner from "./LoadingSpinner";
+import { FiCopy } from "react-icons/fi"; // Icon for copy functionality
 
 const FixedStakeComponent = ({ isConnected }) => {
   // State variables
@@ -27,32 +28,55 @@ const FixedStakeComponent = ({ isConnected }) => {
   const [stakeContract, setStakeContract] = useState(null);
   const [poolTokenContract, setPoolTokenContract] = useState(null);
 
+  const [truncatedAddress, setTruncatedAddress] = useState("");
+
+  // Constants (Adjust these based on your contract's parameters)
+  const STAKING_DURATION_DAYS = 30; // Staking period in days
+  const ANNUAL_REWARD_RATE = 0.3; // 10% annual reward rate
+
   // Initialize provider and signer
   useEffect(() => {
-    if (isConnected && window.ethereum) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
-      const signerInstance = web3Provider.getSigner();
-      setSigner(signerInstance);
-      const contractInstance = new ethers.Contract(
-        SwineStakeAddress,
-        SwineABI,
-        signerInstance
-      );
-      setStakeContract(contractInstance);
-    } else {
-      setProvider(null);
-      setSigner(null);
-      setStakeContract(null);
-      setPoolTokenContract(null);
-      setUserBalance("");
-      setAllowance(0);
-      setFixedStakes([]);
-      setFixedRewards({});
-      setSelectedFixedStakeId(null);
-      setFixedTxHash("");
-      setFixedError("");
-    }
+    const initializeProvider = async () => {
+      if (isConnected && window.ethereum) {
+        try {
+          const web3Provider = new ethers.providers.Web3Provider(
+            window.ethereum
+          );
+          setProvider(web3Provider);
+          const signerInstance = web3Provider.getSigner();
+          setSigner(signerInstance);
+          const contractInstance = new ethers.Contract(
+            SwineStakeAddress,
+            SwineABI,
+            signerInstance
+          );
+          setStakeContract(contractInstance);
+
+          // Fetch and truncate wallet address
+          const address = await signerInstance.getAddress();
+          const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
+          setTruncatedAddress(truncated);
+        } catch (err) {
+          console.error("Error initializing provider:", err);
+          setFixedError("Failed to connect to wallet.");
+        }
+      } else {
+        // Reset state if not connected
+        setProvider(null);
+        setSigner(null);
+        setStakeContract(null);
+        setPoolTokenContract(null);
+        setUserBalance("");
+        setAllowance(0);
+        setFixedStakes([]);
+        setFixedRewards({});
+        setSelectedFixedStakeId(null);
+        setFixedTxHash("");
+        setFixedError("");
+        setTruncatedAddress("");
+      }
+    };
+    initializeProvider();
   }, [isConnected]);
 
   // Fetch poolToken address from SwineStake contract
@@ -141,17 +165,35 @@ const FixedStakeComponent = ({ isConnected }) => {
   // Fetch User's Fixed Stakes and Rewards
   useEffect(() => {
     const fetchFixedStakes = async () => {
-      if (stakeContract && signer) {
+      if (stakeContract && signer && provider) {
         try {
           const address = await signer.getAddress();
           const stakeIds = await stakeContract.getUserFixedStakes(address);
           const stakes = await Promise.all(
             stakeIds.map(async (stakeId) => {
               const stake = await stakeContract.fixedStakes(stakeId);
+              const startBlock = stake.startBlock.toNumber();
+              const block = await provider.getBlock(startBlock);
+              const startTime = new Date(block.timestamp * 1000); // Convert to milliseconds
+
+              // Calculate end time
+              const stakingDurationMs =
+                STAKING_DURATION_DAYS * 24 * 60 * 60 * 1000; // 30 days
+              const endTime = new Date(startTime.getTime() + stakingDurationMs);
+
+              // Calculate expected total reward
+              const expectedTotalReward =
+                (stake.amount / Math.pow(10, poolTokenDecimals)) *
+                ANNUAL_REWARD_RATE *
+                (STAKING_DURATION_DAYS / 365);
+
               return {
                 stakeId: stake.stakeId.toNumber(),
                 amount: formatUnits(stake.amount, poolTokenDecimals),
-                startBlock: stake.startBlock.toNumber(),
+                startBlock: startBlock,
+                startTime: startTime.toLocaleString(),
+                endTime: endTime.toLocaleString(),
+                expectedTotalReward: expectedTotalReward.toFixed(2),
                 withdrawn: stake.withdrawn,
               };
             })
@@ -179,7 +221,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       }
     };
     fetchFixedStakes();
-  }, [stakeContract, signer, poolTokenDecimals]);
+  }, [stakeContract, signer, poolTokenDecimals, provider]);
 
   // Approve tokens for Fixed staking
   const approveTokensFixed = async () => {
@@ -286,10 +328,27 @@ const FixedStakeComponent = ({ isConnected }) => {
       const stakes = await Promise.all(
         stakeIds.map(async (stakeId) => {
           const stake = await stakeContract.fixedStakes(stakeId);
+          const startBlock = stake.startBlock.toNumber();
+          const block = await provider.getBlock(startBlock);
+          const startTime = new Date(block.timestamp * 1000); // Convert to milliseconds
+
+          // Calculate end time
+          const stakingDurationMs = STAKING_DURATION_DAYS * 24 * 60 * 60 * 1000; // 30 days
+          const endTime = new Date(startTime.getTime() + stakingDurationMs);
+
+          // Calculate expected total reward
+          const expectedTotalReward =
+            (stake.amount / Math.pow(10, poolTokenDecimals)) *
+            ANNUAL_REWARD_RATE *
+            (STAKING_DURATION_DAYS / 365);
+
           return {
             stakeId: stake.stakeId.toNumber(),
             amount: formatUnits(stake.amount, poolTokenDecimals),
-            startBlock: stake.startBlock.toNumber(),
+            startBlock: startBlock,
+            startTime: startTime.toLocaleString(),
+            endTime: endTime.toLocaleString(),
+            expectedTotalReward: expectedTotalReward.toFixed(2),
             withdrawn: stake.withdrawn,
           };
         })
@@ -365,22 +424,82 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
+  // Function to copy wallet address to clipboard
+  const copyWalletAddress = async () => {
+    if (signer) {
+      try {
+        const address = await signer.getAddress();
+        await navigator.clipboard.writeText(address);
+        alert("Wallet address copied to clipboard!");
+      } catch (err) {
+        console.error("Failed to copy wallet address:", err);
+        alert("Failed to copy wallet address.");
+      }
+    }
+  };
+
   return (
     <div className="bg-[#BB4938]/20 w-full p-6 rounded-xl shadow-lg">
-      <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse ">Fixed</h2>
+      {/* Header */}
+      <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse">
+        Fixed
+      </h2>
 
-      {/* Display User Balance and Allowance */}
+      {/* Enhanced Wallet Segment */}
       {isConnected && (
         <div className="mb-6">
-          <p className="text-lg">
-            <strong>Wallet:</strong> {userBalance} $SWINE
-          </p>
-          
-          {allowance < Number(fixedAmount) && (
-            <p className="text-yellow-500 text-lg mt-2">
-              <strong>Current Allowance:</strong> {allowance} Tokens
-            </p>
-          )}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
+            {/* Wallet Information */}
+            <div className="flex items-center mb-4 sm:mb-0">
+              <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded-full mr-4">
+                {/* Wallet Icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-[#BB4938]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 1.343-3 3v1H6v2h3v4h2v-4h3v-2h-3v-1c0-1.657-1.343-3-3-3z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-gray-800 dark:text-gray-200 text-lg">
+                  <strong>Wallet Balance:</strong> {userBalance} $SWINE
+                </p>
+                <div className="flex items-center mt-2">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm break-words">
+                    <strong>Wallet Address:</strong> {truncatedAddress}
+                  </p>
+                  <button
+                    onClick={copyWalletAddress}
+                    className="ml-2 text-gray-600 dark:text-gray-400 hover:text-[#BB4938] dark:hover:text-[#BB4938] transition-colors duration-200"
+                    aria-label="Copy Wallet Address">
+                    <FiCopy size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Pool Token Address */}
+            {/* {poolTokenAddress && (
+              <div className="flex items-center">
+                <p className="text-gray-800 dark:text-gray-200 text-lg">
+                  <strong>Pool Token:</strong>{" "}
+                  <a
+                    href={`https://airdao.io/explorer/address/${poolTokenAddress}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline break-words">
+                    {poolTokenAddress}
+                  </a>
+                </p>
+              </div>
+            )} */}
+          </div>
         </div>
       )}
 
@@ -396,8 +515,8 @@ const FixedStakeComponent = ({ isConnected }) => {
         }}>
         {/* Amount Input */}
         <div className="mb-4">
-          <label htmlFor="fixedAmount" className="block mb-2 text-lg">
-            Amount to Stake:
+          <label htmlFor="fixedAmount" className="block mb-2 mt-10 text-lg">
+            Stake Swine:
           </label>
           <input
             id="fixedAmount"
@@ -407,7 +526,7 @@ const FixedStakeComponent = ({ isConnected }) => {
             placeholder="Enter amount"
             value={fixedAmount}
             onChange={(e) => setFixedAmount(e.target.value)}
-            className="w-full p-4 bg-black border border-[#BB4938] rounded-xl text-right text-lg outline-none focus:border-[#ae3d2c] transition duration-150"
+            className="w-full p-4 bg-black border border-[#BB4938] rounded-3xl text-right text-lg outline-none focus:border-[#ae3d2c] transition duration-150"
             required
           />
         </div>
@@ -417,7 +536,7 @@ const FixedStakeComponent = ({ isConnected }) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
-          className="mt-2 bg-[#BB4938] p-3 w-full rounded-xl text-center font-semibold cursor-pointer hover:bg-[#ae3d2c] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-2 bg-[#BB4938] p-3 w-full rounded-2xl text-center font-semibold cursor-pointer hover:bg-[#ae3d2c] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isFixedStaking}>
           {isFixedStaking ? (
             <div className="flex items-center justify-center">
@@ -461,67 +580,52 @@ const FixedStakeComponent = ({ isConnected }) => {
         </motion.div>
       )}
 
-      {/* Display Fixed Stakes */}
+      {/* Display Fixed Stakes as Cards */}
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">Your Fixed Stakes</h3>
+        <h3 className="text-xl font-semibold mb-4 mt-12">Your Stakes</h3>
         {fixedStakes.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-transparent">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b border-gray-700">
-                    Stake ID
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-700">Amount</th>
-                  <th className="px-4 py-2 border-b border-gray-700">
-                    Start Block
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-700">
-                    Accumulated Reward
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-700">Status</th>
-                  <th className="px-4 py-2 border-b border-gray-700">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fixedStakes.map((stake) => (
-                  <tr key={stake.stakeId} className="text-center">
-                    <td className="px-4 py-2 border-b border-gray-700">
-                      {stake.stakeId}
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-700">
-                      {stake.amount} Tokens
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-700">
-                      {stake.startBlock}
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-700">
-                      {fixedRewards[stake.stakeId] || "0"} Tokens
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-700">
-                      {stake.withdrawn ? (
-                        <span className="text-red-500">Unstaked</span>
-                      ) : (
-                        <span className="text-green-500">Active</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-700">
-                      {!stake.withdrawn && (
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="bg-red-600 px-3 py-1 rounded-md text-white hover:bg-red-700 transition-colors duration-300"
-                          onClick={() =>
-                            setSelectedFixedStakeId(stake.stakeId)
-                          }>
-                          Unstake
-                        </motion.button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fixedStakes.map((stake) => (
+              <div
+                key={stake.stakeId}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col justify-between">
+                <div>
+                  <p className="text-gray-800 dark:text-gray-200 text-lg mb-2">
+                    <strong>Stake ID:</strong> {stake.stakeId}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <strong>Amount:</strong> {stake.amount} Tokens
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <strong>Start Time:</strong> {stake.startTime}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <strong>End Time:</strong> {stake.endTime}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    <strong>Expected Reward:</strong>{" "}
+                    {stake.expectedTotalReward} Tokens
+                  </p>
+                </div>
+                <div className="mt-4">
+                  <p
+                    className={`text-sm font-semibold ${
+                      stake.withdrawn ? "text-red-500" : "text-green-500"
+                    } mb-2`}>
+                    {stake.withdrawn ? "Unstaked" : "Active"}
+                  </p>
+                  {!stake.withdrawn && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700 transition-colors duration-300 w-full"
+                      onClick={() => setSelectedFixedStakeId(stake.stakeId)}>
+                      Unstake
+                    </motion.button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <p className="text-lg">You have no fixed stakes to unstake.</p>
@@ -532,7 +636,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       <AnimatePresence>
         {selectedFixedStakeId && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}>
@@ -554,7 +658,8 @@ const FixedStakeComponent = ({ isConnected }) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-md text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-700 transition-colors duration-300"
-                  onClick={() => setSelectedFixedStakeId(null)}>
+                  onClick={() => setSelectedFixedStakeId(null)}
+                  aria-label="Cancel Unstake">
                   Cancel
                 </motion.button>
                 <motion.button
@@ -562,7 +667,8 @@ const FixedStakeComponent = ({ isConnected }) => {
                   whileTap={{ scale: 0.95 }}
                   className="bg-red-600 dark:bg-red-700 px-4 py-2 rounded-md text-white hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-300"
                   onClick={handleFixedUnstake}
-                  disabled={isFixedStaking}>
+                  disabled={isFixedStaking}
+                  aria-label="Confirm Unstake">
                   {isFixedStaking ? (
                     <div className="flex items-center justify-center">
                       <LoadingSpinner />

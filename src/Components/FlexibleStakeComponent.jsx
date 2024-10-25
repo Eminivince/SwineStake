@@ -4,8 +4,9 @@ import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { SwineStakeAddress, SwineABI, ERC20ABI } from "../Utils/Contract";
 import { formatUnits, parseUnits } from "ethers/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingSpinner from "./LoadingSpinner";
+import { FiCopy } from "react-icons/fi"; // Icon for copy functionality
 
 const FlexibleStakeComponent = ({ isConnected }) => {
   // State variables
@@ -17,7 +18,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
   const [flexibleAmount, setFlexibleAmount] = useState("");
   const [flexibleStake, setFlexibleStake] = useState(null);
   const [flexibleRewards, setFlexibleRewards] = useState(0);
-  const [flexibleTimeLeft, setFlexibleTimeLeft] = useState(0); // Blocks left
+  const [flexibleTimeLeft, setFlexibleTimeLeft] = useState(0); // Time left in seconds
   const [flexibleUnstakeAmount, setFlexibleUnstakeAmount] = useState("");
   const [isFlexibleStaking, setIsFlexibleStaking] = useState(false);
   const [flexibleTxHash, setFlexibleTxHash] = useState("");
@@ -29,34 +30,58 @@ const FlexibleStakeComponent = ({ isConnected }) => {
   const [stakeContract, setStakeContract] = useState(null);
   const [poolTokenContract, setPoolTokenContract] = useState(null);
 
+  const [truncatedAddress, setTruncatedAddress] = useState("");
+
+  // Constants (Adjust these based on your contract's parameters)
+  const STAKING_DURATION_DAYS = 30; // Staking period in days
+  const ANNUAL_REWARD_RATE = 0.1; // 10% annual reward rate
+  const BLOCK_TIME_SECONDS = 5.3; // Average block time in seconds (adjust as per your network)
+
   // Initialize provider and signer
   useEffect(() => {
-    if (isConnected && window.ethereum) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
-      const signerInstance = web3Provider.getSigner();
-      setSigner(signerInstance);
-      const contractInstance = new ethers.Contract(
-        SwineStakeAddress,
-        SwineABI,
-        signerInstance
-      );
-      setStakeContract(contractInstance);
-    } else {
-      setProvider(null);
-      setSigner(null);
-      setStakeContract(null);
-      setPoolTokenContract(null);
-      setUserBalance("");
-      setAllowance(0);
-      setFlexibleStake(null);
-      setFlexibleRewards(0);
-      setFlexibleTimeLeft(0);
-      setFlexibleUnstakeAmount("");
-      setFlexibleTxHash("");
-      setFlexibleError("");
-      setFlexibleWarning(false);
-    }
+    const initializeProvider = async () => {
+      if (isConnected && window.ethereum) {
+        try {
+          const web3Provider = new ethers.providers.Web3Provider(
+            window.ethereum
+          );
+          setProvider(web3Provider);
+          const signerInstance = web3Provider.getSigner();
+          setSigner(signerInstance);
+          const contractInstance = new ethers.Contract(
+            SwineStakeAddress,
+            SwineABI,
+            signerInstance
+          );
+          setStakeContract(contractInstance);
+
+          // Fetch and truncate wallet address
+          const address = await signerInstance.getAddress();
+          const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
+          setTruncatedAddress(truncated);
+        } catch (err) {
+          console.error("Error initializing provider:", err);
+          setFlexibleError("Failed to connect to wallet.");
+        }
+      } else {
+        // Reset state if not connected
+        setProvider(null);
+        setSigner(null);
+        setStakeContract(null);
+        setPoolTokenContract(null);
+        setUserBalance("");
+        setAllowance(0);
+        setFlexibleStake(null);
+        setFlexibleRewards(0);
+        setFlexibleTimeLeft(0);
+        setFlexibleUnstakeAmount("");
+        setFlexibleTxHash("");
+        setFlexibleError("");
+        setFlexibleWarning(false);
+        setTruncatedAddress("");
+      }
+    };
+    initializeProvider();
   }, [isConnected]);
 
   // Fetch poolToken address from SwineStake contract
@@ -172,7 +197,10 @@ const FlexibleStakeComponent = ({ isConnected }) => {
           // Calculate blocks left to complete the next interval
           const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
 
-          setFlexibleTimeLeft(blocksLeft > 0 ? blocksLeft : 0);
+          // Convert blocksLeft to seconds
+          const timeLeftSeconds =
+            blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+          setFlexibleTimeLeft(timeLeftSeconds);
         } catch (err) {
           console.error("Error fetching flexible stake data:", err);
           setFlexibleError("Failed to fetch flexible stake data.");
@@ -180,7 +208,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       }
     };
     fetchFlexibleStakeData();
-  }, [stakeContract, signer, provider, poolTokenDecimals]);
+  }, [stakeContract, signer, poolTokenDecimals, provider]);
 
   // Approve tokens for Flexible staking
   const approveTokensFlexible = async () => {
@@ -302,7 +330,9 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
       const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
-      setFlexibleTimeLeft(blocksLeft > 0 ? blocksLeft : 0);
+      const timeLeftSeconds =
+        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+      setFlexibleTimeLeft(timeLeftSeconds);
 
       setFlexibleAmount("");
       setIsFlexibleStaking(false);
@@ -354,7 +384,9 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
       const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
-      setFlexibleTimeLeft(blocksLeft > 0 ? blocksLeft : 0);
+      const timeLeftSeconds =
+        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+      setFlexibleTimeLeft(timeLeftSeconds);
 
       setIsFlexibleStaking(false);
       alert("Flexible rewards claimed successfully!");
@@ -416,7 +448,9 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
       const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
-      setFlexibleTimeLeft(blocksLeft > 0 ? blocksLeft : 0);
+      const timeLeftSeconds =
+        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+      setFlexibleTimeLeft(timeLeftSeconds);
 
       setFlexibleUnstakeAmount("");
       setIsFlexibleStaking(false);
@@ -476,7 +510,9 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
       const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
-      setFlexibleTimeLeft(blocksLeft > 0 ? blocksLeft : 0);
+      const timeLeftSeconds =
+        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+      setFlexibleTimeLeft(timeLeftSeconds);
 
       setFlexibleUnstakeAmount("");
       setIsFlexibleStaking(false);
@@ -490,7 +526,21 @@ const FlexibleStakeComponent = ({ isConnected }) => {
     }
   };
 
-  // Utility function to format time from blocks to "Xd Xh Xm Xs"
+  // Function to copy wallet address to clipboard
+  const copyWalletAddress = async () => {
+    if (signer) {
+      try {
+        const address = await signer.getAddress();
+        await navigator.clipboard.writeText(address);
+        alert("Wallet address copied to clipboard!");
+      } catch (err) {
+        console.error("Failed to copy wallet address:", err);
+        alert("Failed to copy wallet address.");
+      }
+    }
+  };
+
+  // Utility function to format time from seconds to "Xd Xh Xm Xs"
   const formatTime = (seconds) => {
     if (seconds <= 0) return "0 seconds";
 
@@ -512,31 +562,66 @@ const FlexibleStakeComponent = ({ isConnected }) => {
 
   return (
     <div className="bg-[#BB4938]/20 w-full p-6 rounded-xl shadow-lg">
-      <h2 className="text-2xl font-semibold mb-4">Flexible Staking</h2>
+      {/* Header */}
+      {/* <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse">
+        Flexible Staking
+      </h2> */}
 
-      {/* Display User Balance and Allowance */}
+      {/* Enhanced Wallet Segment */}
       {isConnected && (
         <div className="mb-6">
-          <p className="text-lg">
-            <strong>Your Balance:</strong> {userBalance} Tokens
-          </p>
-          {poolTokenAddress && (
-            <p className="text-lg mt-2">
-              <strong>Pool Token Address:</strong>{" "}
-              <a
-                href={`https://airdao.io/explorer/address/${poolTokenAddress}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline break-words">
-                {poolTokenAddress}
-              </a>
-            </p>
-          )}
-          {allowance < Number(flexibleAmount) && (
-            <p className="text-yellow-500 text-lg mt-2">
-              <strong>Current Allowance:</strong> {allowance} Tokens
-            </p>
-          )}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
+            {/* Wallet Information */}
+            <div className="flex items-center mb-4 sm:mb-0">
+              <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded-full mr-4">
+                {/* Wallet Icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-[#BB4938]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 1.343-3 3v1H6v2h3v4h2v-4h3v-2h-3v-1c0-1.657-1.343-3-3-3z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-gray-800 dark:text-gray-200 text-lg">
+                  <strong>Wallet Balance:</strong> {userBalance} Tokens
+                </p>
+                <div className="flex items-center mt-2">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm break-words">
+                    <strong>Wallet Address:</strong> {truncatedAddress}
+                  </p>
+                  <button
+                    onClick={copyWalletAddress}
+                    className="ml-2 text-gray-600 dark:text-gray-400 hover:text-[#BB4938] dark:hover:text-[#BB4938] transition-colors duration-200"
+                    aria-label="Copy Wallet Address">
+                    <FiCopy size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Pool Token Address */}
+            {/* {poolTokenAddress && (
+              <div className="flex items-center">
+                <p className="text-gray-800 dark:text-gray-200 text-lg">
+                  <strong>Pool Token:</strong>{" "}
+                  <a
+                    href={`https://airdao.io/explorer/address/${poolTokenAddress}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline break-words">
+                    {poolTokenAddress}
+                  </a>
+                </p>
+              </div>
+            )} */}
+          </div>
         </div>
       )}
 
@@ -635,9 +720,11 @@ const FlexibleStakeComponent = ({ isConnected }) => {
 
       {/* Display Flexible Stake Details */}
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">Your Flexible Stake</h3>
+        <h3 className="text-xl font-semibold mb-4 mt-12">
+          Your Flexible Stake
+        </h3>
         {flexibleStake ? (
-          <div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
             <p className="text-lg">
               <strong>Staked Amount:</strong> {flexibleStake.amount} Tokens
             </p>
@@ -647,7 +734,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
             <p className="text-lg mt-2">
               <strong>Time Left to Unstake Without Forfeiting Rewards:</strong>{" "}
               {flexibleTimeLeft > 0 ? (
-                <span>{formatTime(flexibleTimeLeft * 5.3)}</span> // Assuming BLOCK_TIME_SECONDS = 5.3
+                <span>{formatTime(flexibleTimeLeft)}</span>
               ) : (
                 <span className="text-green-500">
                   You can unstake now without forfeiting rewards.
@@ -675,7 +762,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                 placeholder="Enter amount"
                 value={flexibleUnstakeAmount}
                 onChange={(e) => setFlexibleUnstakeAmount(e.target.value)}
-                className="w-full p-4 bg-black border border-[#BB4938] rounded-xl text-right text-lg outline-none focus:border-[#ae3d2c] transition duration-150"
+                className="w-full p-4 bg-black border border-red-600 rounded-xl text-right text-lg outline-none focus:border-red-700 transition duration-150"
                 required
               />
               <motion.button
@@ -700,77 +787,83 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       </div>
 
       {/* Warning Modal for Early Unstaking */}
-      {flexibleWarning && (
-        <motion.div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}>
+      <AnimatePresence>
+        {flexibleWarning && (
           <motion.div
-            className="bg-slate-800 p-6 rounded-xl w-11/12 max-w-md"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.8 }}
-            transition={{ duration: 0.3 }}>
-            <h3 className="text-xl font-semibold mb-4">Confirm Unstake</h3>
-            <p className="mb-4">
-              Warning: Unstaking now will forfeit your accumulated rewards. Do
-              you wish to proceed?
-            </p>
-            <div className="flex justify-end space-x-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-gray-600 px-4 py-2 rounded-md text-white hover:bg-gray-700 transition-colors duration-300"
-                onClick={() => setFlexibleWarning(false)}>
-                Cancel
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700 transition-colors duration-300"
-                onClick={confirmFlexibleUnstake}
-                disabled={isFlexibleStaking}>
-                {isFlexibleStaking ? (
-                  <div className="flex items-center justify-center">
-                    <LoadingSpinner />
-                    <span className="ml-2">Unstaking...</span>
-                  </div>
-                ) : (
-                  "Proceed"
-                )}
-              </motion.button>
-            </div>
-            {/* Display Transaction Hash */}
-            {flexibleTxHash && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-4 p-2 bg-gray-700 rounded">
-                <p className="text-lg">
-                  Transaction submitted.{" "}
-                  <a
-                    href={`https://airdao.io/explorer/tx/${flexibleTxHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline">
-                    View on Explorer
-                  </a>
-                </p>
-              </motion.div>
-            )}
-            {/* Display Error */}
-            {flexibleError && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-4 p-2 bg-red-600 rounded">
-                <p className="text-lg">{flexibleError}</p>
-              </motion.div>
-            )}
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}>
+            <motion.div
+              className="bg-slate-800 p-6 rounded-xl shadow-lg w-11/12 max-w-md"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.3 }}>
+              <h3 className="text-xl font-semibold mb-4 text-white">
+                Confirm Unstake
+              </h3>
+              <p className="mb-6 text-gray-300">
+                Warning: Unstaking now will forfeit your accumulated rewards. Do
+                you wish to proceed?
+              </p>
+              <div className="flex justify-end space-x-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gray-600 px-4 py-2 rounded-md text-white hover:bg-gray-700 transition-colors duration-300"
+                  onClick={() => setFlexibleWarning(false)}
+                  aria-label="Cancel Unstake">
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700 transition-colors duration-300"
+                  onClick={confirmFlexibleUnstake}
+                  disabled={isFlexibleStaking}
+                  aria-label="Confirm Unstake">
+                  {isFlexibleStaking ? (
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinner />
+                      <span className="ml-2">Unstaking...</span>
+                    </div>
+                  ) : (
+                    "Proceed"
+                  )}
+                </motion.button>
+              </div>
+              {/* Display Transaction Hash */}
+              {flexibleTxHash && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-4 p-2 bg-gray-700 rounded">
+                  <p className="text-lg text-gray-200">
+                    Transaction submitted.{" "}
+                    <a
+                      href={`https://airdao.io/explorer/tx/${flexibleTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-blue-400">
+                      View on Explorer
+                    </a>
+                  </p>
+                </motion.div>
+              )}
+              {/* Display Error */}
+              {flexibleError && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-4 p-2 bg-red-600 rounded">
+                  <p className="text-lg text-white">{flexibleError}</p>
+                </motion.div>
+              )}
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };
