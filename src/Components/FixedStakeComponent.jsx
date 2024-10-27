@@ -1,16 +1,26 @@
 // src/Components/FixedStakeComponent.jsx
 
 import React, { useEffect, useState } from "react";
+
 import { ethers } from "ethers";
-import { SwineStakeAddress, SwineABI, ERC20ABI } from "../Utils/Contract";
+import {
+  SwineStakeAddress,
+  SwineABI,
+  ERC20ABI,
+  SWINE_TOKEN_ABI,
+  UNISWAP_V2_PAIR_ABI,
+} from "../Utils/Contract";
 import { formatUnits } from "ethers/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingSpinner from "./LoadingSpinner";
-import { FiCopy } from "react-icons/fi"; // Icon for copy functionality
+import { FiCopy, FiTrendingUp, FiPercent } from "react-icons/fi"; // Icons for TVL and APY
+import { IoMdRefresh } from "react-icons/io";
+import axios from "axios";
 
 const FixedStakeComponent = ({ isConnected }) => {
   // State variables
   const [userBalance, setUserBalance] = useState("");
+  const [swinePrice, setSwinePrice] = useState("");
   const [allowance, setAllowance] = useState(0);
   const [poolTokenAddress, setPoolTokenAddress] = useState("");
   const [poolTokenDecimals, setPoolTokenDecimals] = useState(18); // Default to 18 decimals
@@ -30,9 +40,13 @@ const FixedStakeComponent = ({ isConnected }) => {
 
   const [truncatedAddress, setTruncatedAddress] = useState("");
 
+  // New State Variables for TVL and APY
+  const [tvl, setTvl] = useState("");
+  const [apy, setApy] = useState("");
+
   // Constants (Adjust these based on your contract's parameters)
   const STAKING_DURATION_DAYS = 30; // Staking period in days
-  const ANNUAL_REWARD_RATE = 0.3; // 10% annual reward rate
+  const ANNUAL_REWARD_RATE = 0.3; // 30% annual reward rate
 
   // Initialize provider and signer
   useEffect(() => {
@@ -51,6 +65,7 @@ const FixedStakeComponent = ({ isConnected }) => {
             signerInstance
           );
           setStakeContract(contractInstance);
+          calculateSwinePriceAndMc();
 
           // Fetch and truncate wallet address
           const address = await signerInstance.getAddress();
@@ -74,6 +89,8 @@ const FixedStakeComponent = ({ isConnected }) => {
         setFixedTxHash("");
         setFixedError("");
         setTruncatedAddress("");
+        setTvl("");
+        setApy("");
       }
     };
     initializeProvider();
@@ -136,6 +153,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       }
     };
     getUserBalance();
+    handleRefresh();
   }, [poolTokenContract, signer, poolTokenDecimals]);
 
   // Fetch token allowance
@@ -222,6 +240,35 @@ const FixedStakeComponent = ({ isConnected }) => {
     };
     fetchFixedStakes();
   }, [stakeContract, signer, poolTokenDecimals, provider]);
+
+  // Fetch TVL and APY
+  useEffect(() => {
+    const fetchTVLAndAPY = async () => {
+      if (stakeContract && poolTokenContract) {
+        try {
+          // Fetch TVL by getting the staking token balance held by SwineStake contract
+          const totalStaked = await poolTokenContract.balanceOf(
+            SwineStakeAddress
+          );
+          const formattedTVL = ethers.utils.formatUnits(
+            totalStaked,
+            poolTokenDecimals
+          );
+          setTvl(Number(formattedTVL).toFixed(2));
+
+          // Fetch APY
+          const currentAPY = await stakeContract.fixedAPY();
+          // Assuming APY is returned in basis points (e.g., 300 for 3%)
+          const formattedAPY = (currentAPY.toNumber() / 100).toFixed(2);
+          setApy(formattedAPY);
+        } catch (err) {
+          console.error("Error fetching TVL and APY:", err);
+          setFixedError("Failed to fetch TVL and APY.");
+        }
+      }
+    };
+    fetchTVLAndAPY();
+  }, [stakeContract, poolTokenContract, poolTokenDecimals]);
 
   // Approve tokens for Fixed staking
   const approveTokensFixed = async () => {
@@ -424,6 +471,32 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
+  // Handle TVL and APY Refresh
+  const handleRefresh = async () => {
+    setFixedError("");
+    try {
+      if (stakeContract && poolTokenContract) {
+        calculateSwinePriceAndMc();
+        // Fetch TVL
+        const totalStaked = await poolTokenContract.balanceOf(
+          SwineStakeAddress
+        );
+        const formattedTVL = ethers.utils.formatUnits(
+          totalStaked,
+          poolTokenDecimals
+        );
+        setTvl(Number(formattedTVL).toFixed(2));
+
+        // Fetch APY
+        const currentAPY = await stakeContract.fixedAPY();
+        const formattedAPY = (currentAPY.toNumber() / 100).toFixed(2); // Assuming APY is in basis points
+        setApy(formattedAPY);
+      }
+    } catch (err) {
+      console.error("Error refreshing TVL and APY:", err);
+    }
+  };
+
   // Function to copy wallet address to clipboard
   const copyWalletAddress = async () => {
     if (signer) {
@@ -438,12 +511,147 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
+  // Token and Contract Addresses
+  const AMB_TOKEN_ADDRESS = "0x2b2d892C3fe2b4113dd7aC0D2c1882AF202FB28F"; // AMB Token
+  const PAIR_CONTRACT = "0x1a052b0373115c796c636454fE8A90F53D28cf76"; // AMB-SWINE Pair Contract
+  const SWINE_TOKEN_ADDRESS = "0xC410F3EB0c0f0E1EFA188D38C366536d59a265ba"; // SWINE Token
+
+  // Create an instance of the pair contract
+  const pairContract = new ethers.Contract(
+    PAIR_CONTRACT,
+    UNISWAP_V2_PAIR_ABI,
+    provider
+  );
+
+  // Event signature for Uniswap V2 Swap event
+  const SWAP_EVENT_SIGNATURE = ethers.utils.id(
+    "Swap(address,uint256,uint256,uint256,uint256,address)"
+  );
+
+  // Create an instance of the SWINE token contract
+  const swineTokenContract = new ethers.Contract(
+    SWINE_TOKEN_ADDRESS,
+    SWINE_TOKEN_ABI,
+    provider
+  );
+
+  // Function to get the current price of AMB in USD from CoinGecko
+  async function getEthPriceInUSD() {
+    try {
+      const response = await axios.get(
+        "https://api.coingecko.com/api/v3/simple/price?ids=amber&vs_currencies=usd"
+      );
+
+      console.log(response);
+      console.log("AMB Price in USD:", response.data.amber.usd);
+      return response.data.amber.usd;
+    } catch (error) {
+      console.error("Error fetching AMB price:", error);
+      return null;
+    }
+  }
+
+  // Function to calculate the price of SWINE and market cap
+  async function calculateSwinePriceAndMc() {
+    try {
+      const reserves = await pairContract.getReserves();
+      console.log(reserves);
+      const token0 = await pairContract.token0();
+      const token1 = await pairContract.token1();
+
+      const isToken0AMB =
+        token0.toLowerCase() === AMB_TOKEN_ADDRESS.toLowerCase();
+      const AMBReserve = isToken0AMB ? reserves._reserve0 : reserves._reserve1;
+      const SWINEReserve = isToken0AMB
+        ? reserves._reserve1
+        : reserves._reserve0;
+
+      const formattedAMBBal = ethers.utils.formatUnits(AMBReserve, 18);
+      const formattedSWINEBal = ethers.utils.formatUnits(SWINEReserve, 18);
+
+      const totalSupply = await swineTokenContract.totalSupply();
+      const formattedTotalSupply = ethers.utils.formatUnits(totalSupply, 18);
+      console.log(formattedTotalSupply);
+
+      const ethPriceInUSD = await getEthPriceInUSD();
+      console.log(ethPriceInUSD);
+
+      if (ethPriceInUSD === null) {
+        throw new Error("Failed to fetch AMB price in USD.");
+      } else {
+        console.log("Failed to fetch AMB price in USD.", ethPriceInUSD);
+      }
+
+      const swinePriceInAmb =
+        parseFloat(formattedAMBBal) / parseFloat(formattedSWINEBal);
+      const swinePriceInUsd = swinePriceInAmb * ethPriceInUSD;
+      const marketCap =
+        parseFloat(swinePriceInUsd) * parseFloat(formattedTotalSupply);
+
+      console.log("SWINE Price in AMB:", swinePriceInAmb);
+      setSwinePrice(swinePriceInUsd);
+      console.log("SWINE Price in USD:", swinePriceInUsd);
+      console.log("SWINE Market Cap:", marketCap);
+
+      return {
+        swinePriceInAmb: swinePriceInAmb.toFixed(8),
+        swinePriceInUsd: swinePriceInUsd.toFixed(8),
+        marketCap: marketCap.toFixed(4),
+      };
+    } catch (error) {
+      console.error("Error calculating SWINE price and MC:", error);
+      return {
+        swinePriceInAmb: "0",
+        swinePriceInUsd: "0",
+        marketCap: "0",
+      };
+    }
+  }
+
   return (
-    <div className="bg-[#BB4938]/20 md:w-[400px] mx-auto p-6 rounded-xl shadow-lg">
+    <div className="bg-[#BB4938]/20 md:w-[600px] mx-auto p-6 rounded-xl shadow-lg">
       {/* Header */}
-      {/* <h2 className="text-2xl font-semibold mb-10 text-center bg-white text-black w-fit px-5 mx-auto rounded-xl animate-pulse">
-        Fixed
-      </h2> */}
+
+      {/* TVL and APY Information */}
+      <div className="flex space-x-6 justify-between items-center mb-6">
+        {/* TVL Card */}
+        <div className="flex items-center bg-white px-5 dark:bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
+          <FiTrendingUp size={12} className="text-green-500 mr-3" />
+          <div className="">
+            <p className="text-gray-700 dark:text-gray-300 text-center">TVL</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {tvl && swinePrice ? (
+                `$${Number(tvl * swinePrice).toFixed(3)}`
+              ) : (
+                <LoadingSpinner />
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* APY Card */}
+        <div className="flex items-center bg-white px-5  dark:bg-gray-800 rounded-xl shadow-md p-3 text-center">
+          <FiPercent size={12} className="text-blue-500 mr-3" />
+          <div>
+            <p className="text-gray-700 dark:text-gray-300">APY</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {apy ? `${apy}%` : "30%"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Refresh Button */}
+      <div className="flex justify-center mb-6">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleRefresh}
+          className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-300"
+          aria-label="Refresh TVL and APY">
+          Refresh <IoMdRefresh size={20} className="ml-2" />
+        </motion.button>
+      </div>
 
       {/* Enhanced Wallet Segment */}
       {isConnected && (
@@ -485,7 +693,8 @@ const FixedStakeComponent = ({ isConnected }) => {
               </div>
             </div>
             {/* Pool Token Address */}
-            {/* {poolTokenAddress && (
+            {/* Uncomment if you want to display pool token address
+            {poolTokenAddress && (
               <div className="flex items-center">
                 <p className="text-gray-800 dark:text-gray-200 text-lg">
                   <strong>Pool Token:</strong>{" "}
@@ -498,7 +707,8 @@ const FixedStakeComponent = ({ isConnected }) => {
                   </a>
                 </p>
               </div>
-            )} */}
+            )}
+            */}
           </div>
         </div>
       )}
@@ -563,7 +773,7 @@ const FixedStakeComponent = ({ isConnected }) => {
               href={`https://airdao.io/explorer/tx/${fixedTxHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline">
+              className="underline text-blue-400">
               View on Explorer
             </a>
           </p>
@@ -581,7 +791,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       )}
 
       {/* Display Fixed Stakes as Cards */}
-      <div className="mt-8">
+      <div className="mt-8 text-center">
         <h3 className="text-xl font-semibold mb-4 mt-12">Your Stakes</h3>
         {fixedStakes.length > 0 ? (
           <div className="grid md:flex md:flex-col grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -591,7 +801,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col justify-between">
                 <div>
                   <p className="text-gray-800 dark:text-gray-200 text-lg mb-2">
-                    <strong>Stake ID:</strong> {stake.stakeId}
+                    <strong>Stake:</strong> {stake.stakeId}
                   </p>
                   <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                     <strong>Amount:</strong> {stake.amount} Tokens
@@ -628,7 +838,7 @@ const FixedStakeComponent = ({ isConnected }) => {
             ))}
           </div>
         ) : (
-          <p className="text-lg">You have no fixed stakes to unstake.</p>
+          <p className="text-lg">You have no stake at the moment.</p>
         )}
       </div>
 
@@ -678,24 +888,6 @@ const FixedStakeComponent = ({ isConnected }) => {
                   )}
                 </motion.button>
               </div>
-              {/* Display Transaction Hash */}
-              {/* {fixedTxHash && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-4 p-2 bg-gray-200 dark:bg-gray-700 rounded">
-                  <p className="text-lg text-gray-800 dark:text-gray-200">
-                    Transaction submitted.{" "}
-                    <a
-                      href={`https://airdao.io/explorer/tx/${fixedTxHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline text-blue-600 dark:text-blue-400">
-                      View on Explorer
-                    </a>
-                  </p>
-                </motion.div>
-              )} */}
               {/* Display Error */}
               {fixedError && (
                 <motion.div
