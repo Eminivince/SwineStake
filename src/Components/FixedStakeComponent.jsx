@@ -16,6 +16,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import { FiCopy, FiTrendingUp, FiPercent } from "react-icons/fi"; // Icons for TVL and APY
 import { IoMdRefresh } from "react-icons/io";
 import axios from "axios";
+import { FaCircleArrowRight } from "react-icons/fa6";
 
 const FixedStakeComponent = ({ isConnected }) => {
   // State variables
@@ -677,7 +678,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       {/* Enhanced Wallet Segment */}
       {isConnected && (
         <div className="mb-6">
-          <div className="bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
+          <div className="bg-gray-800 md:w-fit md:mx-auto rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
             {/* Wallet Information */}
             <div className="flex items-center sm:mb-0 md: w-fit mx-auto">
               <div className="bg-gray-700 p-3 rounded-full mr-4">
@@ -776,6 +777,18 @@ const FixedStakeComponent = ({ isConnected }) => {
               Max
             </button>
           </div>
+        </div>
+
+        <div className="mt-8 mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <h1>Duration</h1>
+            <div className="flex items-center space-x-4">
+              {" "}
+              <h1>30 days</h1>
+              <FaCircleArrowRight />
+            </div>
+          </div>
+          <hr />
         </div>
 
         {/* Stake Button */}
