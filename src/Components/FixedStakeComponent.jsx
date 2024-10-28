@@ -1,7 +1,6 @@
 // src/Components/FixedStakeComponent.jsx
 
 import React, { useEffect, useState } from "react";
-
 import { ethers } from "ethers";
 import {
   SwineStakeAddress,
@@ -19,7 +18,7 @@ import axios from "axios";
 import { FaCircleArrowRight } from "react-icons/fa6";
 
 const FixedStakeComponent = ({ isConnected }) => {
-  // State variables
+  // **State Variables**
   const [userBalance, setUserBalance] = useState("");
   const [totalStaked, setTotalStaked] = useState("0");
   const [AMBToUSD, setAMBUSDPrice] = useState("0");
@@ -44,22 +43,28 @@ const FixedStakeComponent = ({ isConnected }) => {
 
   const [truncatedAddress, setTruncatedAddress] = useState("");
 
-  // New State Variables for TVL and APY
+  // **New State Variables for TVL and APY**
   const [tvl, setTvl] = useState("");
   const [apy, setApy] = useState("");
+
+  // **New State Variable for PiggyBank Contract**
+  const [piggyBankContract, setPiggyBankContract] = useState(null);
+
+  // **New State Variables for Add Token Modal**
+  const [showAddPiggyBankModal, setShowAddPiggyBankModal] = useState(false);
 
   // Constants (Adjust these based on your contract's parameters)
   const STAKING_DURATION_DAYS = 30; // Staking period in days
   const ANNUAL_REWARD_RATE = 0.3; // 30% annual reward rate
 
-  useEffect(() => {
-    const getPriceUSD = async () => {
-      calculateSwinePriceAndMc();
-    };
-    getPriceUSD();
-  }, [AMBToUSD]);
+  // **Define PiggyBank Token Details**
+  const PIGGYBANK_TOKEN_ADDRESS = "0xfaA5373600B2671D81266DC0e6Ed9198f12A7D33";
+  const PIGGYBANK_TOKEN_NAME = "PiggyBank";
+  const PIGGYBANK_TOKEN_SYMBOL = "PGB";
+  const PIGGYBANK_TOKEN_DECIMALS = 18;
+  //   const PIGGYBANK_TOKEN_IMAGE = "https://path-to-piggybank-token-logo.png"; // Replace with actual image URL
 
-  // Initialize provider and signer
+  // **Initialize Provider and Signer**
   useEffect(() => {
     const initializeProvider = async () => {
       if (isConnected && window.ethereum) {
@@ -92,6 +97,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         setSigner(null);
         setStakeContract(null);
         setPoolTokenContract(null);
+        setPiggyBankContract(null);
         setUserBalance("");
         setAllowance(0);
         setFixedStakes([]);
@@ -107,7 +113,26 @@ const FixedStakeComponent = ({ isConnected }) => {
     initializeProvider();
   }, [isConnected]);
 
-  // Calculate Total Staked Balance
+  // **Initialize PiggyBank Contract**
+  useEffect(() => {
+    if (isConnected && window.ethereum && signer) {
+      try {
+        const piggyContract = new ethers.Contract(
+          PIGGYBANK_TOKEN_ADDRESS,
+          ERC20ABI,
+          signer
+        );
+        setPiggyBankContract(piggyContract);
+      } catch (err) {
+        console.error("Error initializing PiggyBank contract:", err);
+        setFixedError("Failed to initialize PiggyBank contract.");
+      }
+    } else {
+      setPiggyBankContract(null);
+    }
+  }, [isConnected, signer]);
+
+  // **Calculate Total Staked Balance**
   useEffect(() => {
     const calculateTotalStaked = () => {
       if (fixedStakes.length === 0) {
@@ -125,12 +150,13 @@ const FixedStakeComponent = ({ isConnected }) => {
     calculateTotalStaked();
   }, [fixedStakes]);
 
-  // Fetch poolToken address from SwineStake contract
+  // **Fetch poolToken address from SwineStake contract**
   useEffect(() => {
     const fetchPoolTokenAddress = async () => {
       if (stakeContract) {
         try {
           const tokenAddress = await stakeContract.stakingToken();
+          console.log("tokenAddress", tokenAddress);
           setPoolTokenAddress(tokenAddress);
         } catch (err) {
           console.error("Error fetching pool token address:", err);
@@ -141,7 +167,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     fetchPoolTokenAddress();
   }, [stakeContract]);
 
-  // Initialize Pool Token Contract and fetch decimals
+  // **Initialize Pool Token Contract and fetch decimals**
   useEffect(() => {
     const initPoolTokenContract = async () => {
       if (poolTokenAddress && signer) {
@@ -163,17 +189,21 @@ const FixedStakeComponent = ({ isConnected }) => {
     initPoolTokenContract();
   }, [poolTokenAddress, signer]);
 
-  // Fetch user's token balance
+  // **Fetch user's token balance**
   useEffect(() => {
     const getUserBalance = async () => {
       try {
+        console.log("poolTokenContract", poolTokenContract);
         if (poolTokenContract && signer) {
           const address = await signer.getAddress();
           const balance = await poolTokenContract.balanceOf(address);
+          console.log(poolTokenContract);
           const formattedBal = ethers.utils.formatUnits(
             balance,
             poolTokenDecimals
           );
+          console.log(formattedBal);
+
           setUserBalance(Number(formattedBal).toFixed(2));
         }
       } catch (err) {
@@ -185,7 +215,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     handleRefresh();
   }, [poolTokenContract, signer, poolTokenDecimals]);
 
-  // Fetch token allowance
+  // **Fetch token allowance**
   useEffect(() => {
     const fetchAllowance = async () => {
       try {
@@ -209,53 +239,50 @@ const FixedStakeComponent = ({ isConnected }) => {
     fetchAllowance();
   }, [poolTokenContract, signer, stakeContract, poolTokenDecimals]);
 
-  // Fetch User's Fixed Stakes and Rewards
+  // **Fetch User's Fixed Stakes and Rewards**
   useEffect(() => {
     const fetchFixedStakes = async () => {
       if (stakeContract && signer && provider) {
         try {
           const address = await signer.getAddress();
           const stakeIds = await stakeContract.getUserFixedStakes(address);
+          console.log("stakeIds", stakeIds);
           const stakes = await Promise.all(
             stakeIds.map(async (stakeId) => {
               const stake = await stakeContract.fixedStakes(stakeId);
-              const startBlock = stake.startBlock.toNumber();
-              const block = await provider.getBlock(startBlock);
-              const startTime = new Date(block.timestamp * 1000); // Convert to milliseconds
+              console.log("stake", { stake });
+
+              const startTime = stake.startTime.toNumber() * 1000; // Convert to milliseconds
 
               // Calculate end time
               const stakingDurationMs =
                 STAKING_DURATION_DAYS * 24 * 60 * 60 * 1000; // 30 days
-              const endTime = new Date(startTime.getTime() + stakingDurationMs);
+              const endTime = new Date(startTime + stakingDurationMs);
 
-              // Calculate expected total reward
-              const expectedTotalReward =
-                (stake.amount / Math.pow(10, poolTokenDecimals)) *
-                ANNUAL_REWARD_RATE *
-                (STAKING_DURATION_DAYS / 365);
+              // Utilize the pre-calculated expectedReward
+              const expectedTotalReward = parseFloat(
+                formatUnits(stake.expectedReward, poolTokenDecimals)
+              ).toFixed(2);
 
               return {
                 stakeId: stake.stakeId.toNumber(),
                 amount: formatUnits(stake.amount, poolTokenDecimals),
-                startBlock: startBlock,
-                startTime: startTime.toLocaleString(),
+                startTime: new Date(startTime).toLocaleString(),
                 endTime: endTime.toLocaleString(),
-                expectedTotalReward: expectedTotalReward.toFixed(2),
+                expectedTotalReward: expectedTotalReward,
                 withdrawn: stake.withdrawn,
               };
             })
           );
+
+          console.log("stakes", stakes);
           setFixedStakes(stakes);
 
           // Fetch rewards for each fixed stake
           const rewards = {};
           for (const stake of stakes) {
             if (!stake.withdrawn) {
-              const reward = await stakeContract.calculateFixedReward(
-                ethers.utils.parseUnits(stake.amount, poolTokenDecimals),
-                stake.startBlock
-              );
-              rewards[stake.stakeId] = formatUnits(reward, poolTokenDecimals);
+              rewards[stake.stakeId] = stake.expectedTotalReward;
             } else {
               rewards[stake.stakeId] = "0";
             }
@@ -270,7 +297,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     fetchFixedStakes();
   }, [stakeContract, signer, poolTokenDecimals, provider]);
 
-  // Fetch TVL and APY
+  // **Fetch TVL and APY**
   useEffect(() => {
     const fetchTVLAndAPY = async () => {
       if (stakeContract && poolTokenContract) {
@@ -283,11 +310,13 @@ const FixedStakeComponent = ({ isConnected }) => {
             totalStaked,
             poolTokenDecimals
           );
+
+          console.log(formattedTVL);
           setTvl(Number(formattedTVL).toFixed(2));
 
           // Fetch APY
           const currentAPY = await stakeContract.fixedAPY();
-          // Assuming APY is returned in basis points (e.g., 300 for 3%)
+          // Assuming APY is returned in basis points (e.g., 3000 for 30%)
           const formattedAPY = (currentAPY.toNumber() / 100).toFixed(2);
           setApy(formattedAPY);
         } catch (err) {
@@ -299,7 +328,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     fetchTVLAndAPY();
   }, [stakeContract, poolTokenContract, poolTokenDecimals]);
 
-  // Approve tokens for Fixed staking
+  // **Approve tokens for Fixed staking**
   const approveTokensFixed = async () => {
     setFixedError("");
     setFixedTxHash("");
@@ -344,7 +373,61 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
-  // Stake tokens in Fixed mode
+  // **Function to Check PiggyBank Token Balance**
+  const checkPiggyBankBalance = async () => {
+    if (!piggyBankContract || !signer) return 0;
+
+    try {
+      const userAddress = await signer.getAddress();
+      const balance = await piggyBankContract.balanceOf(userAddress);
+      const formattedBalance = parseFloat(
+        ethers.utils.formatUnits(balance, PIGGYBANK_TOKEN_DECIMALS)
+      );
+
+      return formattedBalance;
+    } catch (error) {
+      console.error("Error fetching PiggyBank balance:", error);
+      return 0;
+    }
+  };
+
+  // **Function to Prompt Adding PiggyBank Token to Wallet**
+  const promptAddPiggyBankToken = async () => {
+    try {
+      const wasAdded = await window.ethereum.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC20", // Initially only supports ERC20
+          options: {
+            address: PIGGYBANK_TOKEN_ADDRESS,
+            symbol: PIGGYBANK_TOKEN_SYMBOL,
+            decimals: PIGGYBANK_TOKEN_DECIMALS,
+          },
+        },
+      });
+
+      if (wasAdded) {
+        alert("PiggyBank Token has been added to your wallet!");
+      } else {
+        alert("PiggyBank Token was not added to your wallet.");
+      }
+    } catch (error) {
+      console.error("Error adding PiggyBank Token:", error);
+      alert("Failed to add PiggyBank Token to your wallet.");
+    }
+  };
+
+  // **Function to Handle Showing the Add Token Modal**
+  const handleShowAddPiggyBankModal = () => {
+    setShowAddPiggyBankModal(true);
+  };
+
+  // **Function to Handle Closing the Add Token Modal**
+  const handleCloseAddPiggyBankModal = () => {
+    setShowAddPiggyBankModal(false);
+  };
+
+  // **Stake tokens in Fixed mode**
   const stakeFixed = async () => {
     setFixedError("");
     setFixedTxHash("");
@@ -404,27 +487,23 @@ const FixedStakeComponent = ({ isConnected }) => {
       const stakes = await Promise.all(
         stakeIds.map(async (stakeId) => {
           const stake = await stakeContract.fixedStakes(stakeId);
-          const startBlock = stake.startBlock.toNumber();
-          const block = await provider.getBlock(startBlock);
-          const startTime = new Date(block.timestamp * 1000); // Convert to milliseconds
+          const startTime = stake.startTime.toNumber() * 1000; // Convert to milliseconds
 
           // Calculate end time
           const stakingDurationMs = STAKING_DURATION_DAYS * 24 * 60 * 60 * 1000; // 30 days
-          const endTime = new Date(startTime.getTime() + stakingDurationMs);
+          const endTime = new Date(startTime + stakingDurationMs);
 
-          // Calculate expected total reward
-          const expectedTotalReward =
-            (stake.amount / Math.pow(10, poolTokenDecimals)) *
-            ANNUAL_REWARD_RATE *
-            (STAKING_DURATION_DAYS / 365);
+          // Utilize the pre-calculated expectedReward
+          const expectedTotalReward = parseFloat(
+            formatUnits(stake.expectedReward, poolTokenDecimals)
+          ).toFixed(2);
 
           return {
             stakeId: stake.stakeId.toNumber(),
             amount: formatUnits(stake.amount, poolTokenDecimals),
-            startBlock: startBlock,
-            startTime: startTime.toLocaleString(),
+            startTime: new Date(startTime).toLocaleString(),
             endTime: endTime.toLocaleString(),
-            expectedTotalReward: expectedTotalReward.toFixed(2),
+            expectedTotalReward: expectedTotalReward,
             withdrawn: stake.withdrawn,
           };
         })
@@ -434,11 +513,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       const rewards = {};
       for (const stake of stakes) {
         if (!stake.withdrawn) {
-          const reward = await stakeContract.calculateFixedReward(
-            ethers.utils.parseUnits(stake.amount, poolTokenDecimals),
-            stake.startBlock
-          );
-          rewards[stake.stakeId] = formatUnits(reward, poolTokenDecimals);
+          rewards[stake.stakeId] = stake.expectedTotalReward;
         } else {
           rewards[stake.stakeId] = "0";
         }
@@ -448,6 +523,12 @@ const FixedStakeComponent = ({ isConnected }) => {
       setFixedAmount("");
       setIsFixedStaking(false);
       alert("Fixed staking successful!");
+
+      // **New Code: Check PiggyBank Balance and Prompt**
+      const piggyBankBalance = await checkPiggyBankBalance();
+      if (piggyBankBalance > 0) {
+        handleShowAddPiggyBankModal();
+      }
     } catch (err) {
       console.error("Error during fixed staking:", err);
       setFixedError("An error occurred during fixed staking.");
@@ -455,7 +536,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
-  // Handle Fixed Unstaking
+  // **Handle Fixed Unstaking**
   const handleFixedUnstake = async () => {
     if (!selectedFixedStakeId) {
       setFixedError("Please select a stake to unstake.");
@@ -500,7 +581,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
-  // Handle TVL and APY Refresh
+  // **Handle TVL and APY Refresh**
   const handleRefresh = async () => {
     setFixedError("");
     try {
@@ -518,7 +599,8 @@ const FixedStakeComponent = ({ isConnected }) => {
 
         // Fetch APY
         const currentAPY = await stakeContract.fixedAPY();
-        const formattedAPY = (currentAPY.toNumber() / 100).toFixed(2); // Assuming APY is in basis points
+        // Assuming APY is in basis points
+        const formattedAPY = (currentAPY.toNumber() / 100).toFixed(2);
         setApy(formattedAPY);
       }
     } catch (err) {
@@ -526,7 +608,7 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
-  // Function to copy wallet address to clipboard
+  // **Function to Copy Wallet Address to Clipboard**
   const copyWalletAddress = async () => {
     if (signer) {
       try {
@@ -540,31 +622,24 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   };
 
-  // Token and Contract Addresses
+  // **Token and Contract Addresses**
   const AMB_TOKEN_ADDRESS = "0x2b2d892C3fe2b4113dd7aC0D2c1882AF202FB28F"; // AMB Token
   const PAIR_CONTRACT = "0x1a052b0373115c796c636454fE8A90F53D28cf76"; // AMB-SWINE Pair Contract
   const SWINE_TOKEN_ADDRESS = "0xC410F3EB0c0f0E1EFA188D38C366536d59a265ba"; // SWINE Token
 
-  // Create an instance of the pair contract
-  const pairContract = new ethers.Contract(
-    PAIR_CONTRACT,
-    UNISWAP_V2_PAIR_ABI,
-    provider
-  );
+  // **Create an instance of the pair contract**
+  const pairContract =
+    poolTokenAddress && signer
+      ? new ethers.Contract(PAIR_CONTRACT, UNISWAP_V2_PAIR_ABI, signer)
+      : null;
 
-  // Event signature for Uniswap V2 Swap event
-  const SWAP_EVENT_SIGNATURE = ethers.utils.id(
-    "Swap(address,uint256,uint256,uint256,uint256,address)"
-  );
+  // **Create an instance of the SWINE token contract**
+  const swineTokenContract =
+    poolTokenAddress && signer
+      ? new ethers.Contract(SWINE_TOKEN_ADDRESS, SWINE_TOKEN_ABI, signer)
+      : null;
 
-  // Create an instance of the SWINE token contract
-  const swineTokenContract = new ethers.Contract(
-    SWINE_TOKEN_ADDRESS,
-    SWINE_TOKEN_ABI,
-    provider
-  );
-
-  // Function to get the current price of AMB in USD from CoinGecko
+  // **Function to get the current price of AMB in USD from CoinGecko**
   async function getEthPriceInUSD() {
     try {
       const response = await axios.get(
@@ -581,9 +656,17 @@ const FixedStakeComponent = ({ isConnected }) => {
     }
   }
 
-  // Function to calculate the price of SWINE and market cap
+  // **Function to calculate the price of SWINE and market cap**
   async function calculateSwinePriceAndMc() {
     try {
+      if (!pairContract || !swineTokenContract) {
+        return {
+          swinePriceInAmb: "0",
+          swinePriceInUsd: "0",
+          marketCap: "0",
+        };
+      }
+
       const reserves = await pairContract.getReserves();
       const token0 = await pairContract.token0();
       const token1 = await pairContract.token1();
@@ -632,12 +715,13 @@ const FixedStakeComponent = ({ isConnected }) => {
 
   return (
     <div className="bg-[#BB4938]/20 md:w-[600px] mx-auto p-6 rounded-xl shadow-lg">
-      {/* Header */}
+      {/* **Header (Optional, can be customized)** */}
+      {/* <h2 className="text-2xl font-bold mb-6 text-center">Fixed Staking</h2> */}
 
-      {/* TVL and APY Information */}
+      {/* **TVL and APY Information** */}
       <div className="flex space-x-6 justify-between items-center mb-6">
-        {/* TVL Card */}
-        <div className="flex items-center  px-5 bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
+        {/* **TVL Card** */}
+        <div className="flex items-center px-5 bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
           <FiTrendingUp size={12} className="text-green-500 mr-3" />
           <div className="">
             <p className="text-gray-300 text-center">TVL</p>
@@ -651,8 +735,8 @@ const FixedStakeComponent = ({ isConnected }) => {
           </div>
         </div>
 
-        {/* APY Card */}
-        <div className="flex items-center px-5  bg-gray-800 rounded-xl shadow-md p-3 text-center">
+        {/* **APY Card** */}
+        <div className="flex items-center px-5 bg-gray-800 rounded-xl shadow-md p-3 text-center">
           <FiPercent size={12} className="text-blue-500 mr-3" />
           <div>
             <p className="text-gray-300">APY</p>
@@ -663,7 +747,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         </div>
       </div>
 
-      {/* Refresh Button */}
+      {/* **Refresh Button** */}
       <div className="flex justify-center mb-6">
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -675,14 +759,14 @@ const FixedStakeComponent = ({ isConnected }) => {
         </motion.button>
       </div>
 
-      {/* Enhanced Wallet Segment */}
+      {/* **Enhanced Wallet Segment** */}
       {isConnected && (
         <div className="mb-6">
           <div className="bg-gray-800 md:w-fit md:mx-auto rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
-            {/* Wallet Information */}
+            {/* **Wallet Information** */}
             <div className="flex items-center sm:mb-0 md: w-fit mx-auto">
               <div className="bg-gray-700 p-3 rounded-full mr-4">
-                {/* Wallet Icon */}
+                {/* **Wallet Icon (Customize as needed)** */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6 text-[#BB4938]"
@@ -701,7 +785,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                 <p className="text-gray-200">
                   <strong>Bal:</strong> {userBalance} $SWINE
                 </p>
-                {/* New Total Staked Balance Display */}
+                {/* **New Total Staked Balance Display** */}
                 <p className="text-gray-200 mt-2">
                   <strong>Staked:</strong> {totalStaked} $SWINE
                 </p>
@@ -718,7 +802,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                 </div>
               </div>
             </div>
-            {/* Pool Token Address */}
+            {/* **Pool Token Address (Optional)** */}
             {/* Uncomment if you want to display pool token address
             {poolTokenAddress && (
               <div className="flex items-center">
@@ -728,7 +812,8 @@ const FixedStakeComponent = ({ isConnected }) => {
                     href={`https://airdao.io/explorer/address/${poolTokenAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline break-words">
+                    className="underline break-words"
+                  >
                     {poolTokenAddress}
                   </a>
                 </p>
@@ -739,7 +824,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         </div>
       )}
 
-      {/* Staking Form */}
+      {/* **Staking Form** */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -749,7 +834,7 @@ const FixedStakeComponent = ({ isConnected }) => {
             stakeFixed();
           }
         }}>
-        {/* Amount Input with Max Button */}
+        {/* **Amount Input with Max Button** */}
         <div className="mb-4">
           <label htmlFor="fixedAmount" className="block mb-2 mt-10 text-lg">
             Stake Swine:
@@ -779,6 +864,7 @@ const FixedStakeComponent = ({ isConnected }) => {
           </div>
         </div>
 
+        {/* **Staking Duration Information** */}
         <div className="mt-8 mb-4">
           <div className="flex justify-between items-center mb-3">
             <h1>Duration</h1>
@@ -791,7 +877,7 @@ const FixedStakeComponent = ({ isConnected }) => {
           <hr />
         </div>
 
-        {/* Stake Button */}
+        {/* **Stake Button** */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -811,7 +897,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         </motion.button>
       </form>
 
-      {/* Transaction Hash */}
+      {/* **Transaction Hash** */}
       {fixedTxHash && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -830,7 +916,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         </motion.div>
       )}
 
-      {/* Error Message */}
+      {/* **Error Message** */}
       {fixedError && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -840,7 +926,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         </motion.div>
       )}
 
-      {/* Display Fixed Stakes as Cards */}
+      {/* **Display Fixed Stakes as Cards** */}
       <div className="mt-8 text-center">
         <h3 className="text-xl font-semibold mb-4 mt-12">Your Stakes</h3>
         {fixedStakes.length > 0 ? (
@@ -854,7 +940,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                     <strong>Stake:</strong> {stake.stakeId}
                   </p>
                   <p className="text-gray-400 text-sm mb-1">
-                    <strong>Amount:</strong> {stake.amount} Tokens
+                    <strong>Amount:</strong> {stake.amount} $SWINE
                   </p>
                   <p className="text-gray-400 text-sm mb-1">
                     <strong>Start Time:</strong> {stake.startTime}
@@ -864,7 +950,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                   </p>
                   <p className="text-gray-400 text-sm">
                     <strong>Expected Reward:</strong>{" "}
-                    {stake.expectedTotalReward} Tokens
+                    {stake.expectedTotalReward} $SWINE
                   </p>
                 </div>
                 <div className="mt-4">
@@ -878,7 +964,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700 transition-colors duration-300 w-full"
+                      className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700 transition-colors duration-300"
                       onClick={() => setSelectedFixedStakeId(stake.stakeId)}>
                       Unstake
                     </motion.button>
@@ -892,7 +978,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         )}
       </div>
 
-      {/* Confirm Unstake Modal for Fixed Staking */}
+      {/* **Confirm Unstake Modal for Fixed Staking** */}
       <AnimatePresence>
         {selectedFixedStakeId && (
           <motion.div
@@ -938,7 +1024,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                   )}
                 </motion.button>
               </div>
-              {/* Display Error */}
+              {/* **Display Error** */}
               {fixedError && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -947,6 +1033,53 @@ const FixedStakeComponent = ({ isConnected }) => {
                   <p className="text-lg text-center text-white">{fixedError}</p>
                 </motion.div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* **Confirm Add PiggyBank Token Modal** */}
+      <AnimatePresence>
+        {showAddPiggyBankModal && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}>
+            <motion.div
+              className="bg-gray-800 p-6 rounded-xl shadow-lg w-11/12 max-w-md mx-auto"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.3 }}>
+              {/* <h3 className="text-lg text-center font-semibold mb-4 text-white">
+                Add PiggyBank Token to Your Wallet
+              </h3> */}
+              <p className="mb-6 text-center text-gray-300">
+                You just received a soul-bound PIGGYBANK token 1:1 redeemable
+                for $SWINE! <br /> Add $PIGGYBANK to your wallet?
+              </p>
+              <div className="flex justify-end space-x-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gray-600 px-4 py-2 rounded-md text-gray-200 hover:bg-gray-700 transition-colors duration-300"
+                  onClick={handleCloseAddPiggyBankModal}
+                  aria-label="Cancel Adding Token">
+                  No, Thanks
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-blue-600 px-4 py-2 rounded-md text-white hover:bg-blue-700 transition-colors duration-300"
+                  onClick={() => {
+                    promptAddPiggyBankToken();
+                    handleCloseAddPiggyBankModal();
+                  }}
+                  aria-label="Add PiggyBank Token">
+                  Yes, Add Token
+                </motion.button>
+              </div>
             </motion.div>
           </motion.div>
         )}

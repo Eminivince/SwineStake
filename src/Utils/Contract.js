@@ -1,663 +1,470 @@
-export const SwineStakeAddress = "0x8634c90C73ecFB9d440B9aB92BAb2E5Fb4958360";
+export const SwineStakeAddress = "0xd9C40a4C738de951172203711c245B3f94a2d09c";
 
 export const SwineABI = [
   {
+    type: "constructor",
     inputs: [
       {
-        internalType: "address",
         name: "_stakingToken",
         type: "address",
+        internalType: "address",
       },
       {
-        internalType: "address",
         name: "_rewardToken",
         type: "address",
+        internalType: "address",
       },
+      { name: "_piggyBank", type: "address", internalType: "address" },
     ],
     stateMutability: "nonpayable",
-    type: "constructor",
   },
   {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "newFixedAPY",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "newFlexibleAPY",
-        type: "uint256",
-      },
-    ],
-    name: "APYUpdated",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "oldAverageBlockTime",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "newAverageBlockTime",
-        type: "uint256",
-      },
-    ],
-    name: "AverageBlockTimeUpdated",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "oldFixedLockPeriod",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "newFixedLockPeriod",
-        type: "uint256",
-      },
-    ],
-    name: "FixedLockPeriodUpdated",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "stakeId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "FixedStaked",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "stakeId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "reward",
-        type: "uint256",
-      },
-    ],
-    name: "FixedUnstaked",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "oldFlexibleRewardInterval",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "newFlexibleRewardInterval",
-        type: "uint256",
-      },
-    ],
-    name: "FlexibleRewardIntervalUpdated",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "reward",
-        type: "uint256",
-      },
-    ],
-    name: "FlexibleRewardsClaimed",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "FlexibleStaked",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "FlexibleUnstaked",
-    type: "event",
-  },
-  {
-    inputs: [],
-    name: "SCALE",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
     type: "function",
-  },
-  {
-    inputs: [],
     name: "SECONDS_PER_YEAR",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [],
-    name: "averageBlockTime",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [],
-    name: "blocksPerYear",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
     type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_startBlock",
-        type: "uint256",
-      },
-    ],
     name: "calculateFixedReward",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "reward",
-        type: "uint256",
-      },
+    inputs: [
+      { name: "_amount", type: "uint256", internalType: "uint256" },
+      { name: "_startTime", type: "uint256", internalType: "uint256" },
     ],
+    outputs: [{ name: "reward", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_user",
-        type: "address",
-      },
-    ],
+    type: "function",
     name: "calculateFlexibleReward",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "reward",
-        type: "uint256",
-      },
-    ],
+    inputs: [{ name: "_user", type: "address", internalType: "address" }],
+    outputs: [{ name: "reward", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "claimFlexibleRewards",
+    inputs: [],
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_token",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
-      },
-    ],
+    type: "function",
     name: "emergencyWithdraw",
+    inputs: [
+      { name: "_token", type: "address", internalType: "address" },
+      { name: "_amount", type: "uint256", internalType: "uint256" },
+    ],
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "fixedAPY",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "fixedLockPeriod",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    type: "function",
     name: "fixedStakeOwners",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
+    inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    type: "function",
     name: "fixedStakes",
+    inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     outputs: [
+      { name: "stakeId", type: "uint256", internalType: "uint256" },
+      { name: "amount", type: "uint256", internalType: "uint256" },
+      { name: "startTime", type: "uint256", internalType: "uint256" },
+      { name: "withdrawn", type: "bool", internalType: "bool" },
       {
-        internalType: "uint256",
-        name: "stakeId",
+        name: "expectedReward",
         type: "uint256",
-      },
-      {
         internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "startBlock",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "withdrawn",
-        type: "bool",
       },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "flexibleAPY",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "flexibleRewardInterval",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
+    type: "function",
     name: "flexibleStakes",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
     outputs: [
+      { name: "amount", type: "uint256", internalType: "uint256" },
       {
-        internalType: "uint256",
-        name: "amount",
+        name: "lastClaimTime",
         type: "uint256",
-      },
-      {
         internalType: "uint256",
-        name: "lastClaimBlock",
-        type: "uint256",
       },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_user",
-        type: "address",
-      },
-    ],
+    type: "function",
     name: "getUserFixedStakes",
+    inputs: [{ name: "_user", type: "address", internalType: "address" }],
     outputs: [
-      {
-        internalType: "uint256[]",
-        name: "stakeIds",
-        type: "uint256[]",
-      },
+      { name: "stakeIds", type: "uint256[]", internalType: "uint256[]" },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "nextFixedStakeId",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "owner",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
     stateMutability: "view",
-    type: "function",
   },
   {
+    type: "function",
+    name: "piggyBank",
     inputs: [],
+    outputs: [
+      { name: "", type: "address", internalType: "contract PiggyBank" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "renounceOwnership",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "rewardToken",
-    outputs: [
-      {
-        internalType: "contract IERC20",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
-      },
-    ],
-    name: "stakeFixed",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
-      },
-    ],
-    name: "stakeFlexible",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     inputs: [],
-    name: "stakingToken",
-    outputs: [
-      {
-        internalType: "contract IERC20",
-        name: "",
-        type: "address",
-      },
-    ],
+    outputs: [{ name: "", type: "address", internalType: "contract IERC20" }],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_stakeId",
-        type: "uint256",
-      },
-    ],
+    type: "function",
+    name: "stakeFixed",
+    inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "stakeFlexible",
+    inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "stakingToken",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "contract IERC20" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "transferOwnership",
+    inputs: [{ name: "newOwner", type: "address", internalType: "address" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "unstakeFixed",
+    inputs: [{ name: "_stakeId", type: "uint256", internalType: "uint256" }],
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
-      },
-    ],
+    type: "function",
     name: "unstakeFlexible",
+    inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
+    type: "function",
+    name: "updateAPYs",
     inputs: [
       {
-        internalType: "uint256",
         name: "_newFixedAPY",
         type: "uint256",
+        internalType: "uint256",
       },
       {
-        internalType: "uint256",
         name: "_newFlexibleAPY",
         type: "uint256",
+        internalType: "uint256",
       },
     ],
-    name: "updateAPYs",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_newAverageBlockTime",
-        type: "uint256",
-      },
-    ],
-    name: "updateAverageBlockTime",
-    outputs: [],
-    stateMutability: "nonpayable",
     type: "function",
-  },
-  {
+    name: "updateFixedLockPeriod",
     inputs: [
       {
-        internalType: "uint256",
         name: "_newFixedLockPeriod",
         type: "uint256",
+        internalType: "uint256",
       },
     ],
-    name: "updateFixedLockPeriod",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
+    type: "function",
+    name: "updateFlexibleRewardInterval",
     inputs: [
       {
-        internalType: "uint256",
         name: "_newFlexibleRewardInterval",
         type: "uint256",
+        internalType: "uint256",
       },
     ],
-    name: "updateFlexibleRewardInterval",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
+    type: "function",
+    name: "userFixedStakes",
+    inputs: [
+      { name: "", type: "address", internalType: "address" },
+      { name: "", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "event",
+    name: "APYUpdated",
     inputs: [
       {
-        internalType: "address",
-        name: "",
+        name: "newFixedAPY",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "newFlexibleAPY",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FixedLockPeriodUpdated",
+    inputs: [
+      {
+        name: "oldFixedLockPeriod",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "newFixedLockPeriod",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FixedStaked",
+    inputs: [
+      {
+        name: "user",
         type: "address",
+        indexed: true,
+        internalType: "address",
       },
       {
-        internalType: "uint256",
-        name: "",
+        name: "stakeId",
         type: "uint256",
+        indexed: false,
+        internalType: "uint256",
       },
-    ],
-    name: "userFixedStakes",
-    outputs: [
       {
-        internalType: "uint256",
-        name: "",
+        name: "amount",
         type: "uint256",
+        indexed: false,
+        internalType: "uint256",
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FixedUnstaked",
+    inputs: [
+      {
+        name: "user",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "stakeId",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "reward",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FlexibleRewardIntervalUpdated",
+    inputs: [
+      {
+        name: "oldFlexibleRewardInterval",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "newFlexibleRewardInterval",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FlexibleRewardsClaimed",
+    inputs: [
+      {
+        name: "user",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "reward",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FlexibleStaked",
+    inputs: [
+      {
+        name: "user",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FlexibleUnstaked",
+    inputs: [
+      {
+        name: "user",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "OwnershipTransferred",
+    inputs: [
+      {
+        name: "previousOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "newOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "error",
+    name: "OwnableInvalidOwner",
+    inputs: [{ name: "owner", type: "address", internalType: "address" }],
+  },
+  {
+    type: "error",
+    name: "OwnableUnauthorizedAccount",
+    inputs: [{ name: "account", type: "address", internalType: "address" }],
   },
 ];
 
