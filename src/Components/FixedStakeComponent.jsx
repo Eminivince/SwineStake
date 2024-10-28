@@ -570,8 +570,6 @@ const FixedStakeComponent = ({ isConnected }) => {
         "https://api.coingecko.com/api/v3/simple/price?ids=amber&vs_currencies=usd"
       );
 
-      console.log(response);
-      console.log("AMB Price in USD:", response.data.amber.usd);
       if (response.data.amber.usd) {
         setAMBUSDPrice(response.data.amber.usd);
       }
@@ -586,7 +584,6 @@ const FixedStakeComponent = ({ isConnected }) => {
   async function calculateSwinePriceAndMc() {
     try {
       const reserves = await pairContract.getReserves();
-      console.log(reserves);
       const token0 = await pairContract.token0();
       const token1 = await pairContract.token1();
 
@@ -602,15 +599,11 @@ const FixedStakeComponent = ({ isConnected }) => {
 
       const totalSupply = await swineTokenContract.totalSupply();
       const formattedTotalSupply = ethers.utils.formatUnits(totalSupply, 18);
-      console.log(formattedTotalSupply);
 
       const ethPriceInUSD = await getEthPriceInUSD();
-      console.log(ethPriceInUSD);
 
       if (ethPriceInUSD === null) {
         throw new Error("Failed to fetch AMB price in USD.");
-      } else {
-        console.log("AMB Price in USD:", ethPriceInUSD);
       }
 
       const swinePriceInAmb =
@@ -619,10 +612,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       const marketCap =
         parseFloat(swinePriceInUsd) * parseFloat(formattedTotalSupply);
 
-      console.log("SWINE Price in AMB:", swinePriceInAmb);
       setSwinePrice(swinePriceInUsd);
-      console.log("SWINE Price in USD:", swinePriceInUsd);
-      console.log("SWINE Market Cap:", marketCap);
 
       return {
         swinePriceInAmb: swinePriceInAmb.toFixed(8),

@@ -691,7 +691,6 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       const response = await axios.get(
         "https://api.coingecko.com/api/v3/simple/price?ids=amber&vs_currencies=usd"
       );
-      console.log("AMB Price in USD:", response.data.amber.usd);
       if (response.data.amber.usd) {
         setAMBUSDPrice(response.data.amber.usd);
       }
@@ -733,10 +732,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       const marketCap =
         parseFloat(swinePriceInUsd) * parseFloat(formattedTotalSupply);
 
-      console.log("SWINE Price in AMB:", swinePriceInAmb);
       setSwinePrice(swinePriceInUsd);
-      console.log("SWINE Price in USD:", swinePriceInUsd);
-      console.log("SWINE Market Cap:", marketCap);
 
       return {
         swinePriceInAmb: swinePriceInAmb.toFixed(8),
@@ -930,7 +926,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="mt-4 p-2 bg-gray-800 rounded">
-          <p className="text-lg">
+          <p className="text-center">
             Transaction submitted.{" "}
             <a
               href={`https://airdao.io/explorer/tx/${flexibleTxHash}`}
@@ -956,7 +952,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       {/* Display Flexible Stake Details */}
       <div className="mt-8">
         <h3 className="text-lg text-center font-semibold mb-4 mt-12">
-          Your Stakes
+          Your Stake
         </h3>
         {flexibleStake && Number(flexibleStake.amount) > 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
@@ -1009,7 +1005,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                 className="block mb-2 text-lg">
                 Unstake Swine:
               </label>
-              <div className="flex">
+              <div className="flex w-fit mx-auto">
                 <input
                   id="flexibleUnstakeAmount"
                   type="number"
