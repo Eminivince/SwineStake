@@ -156,7 +156,6 @@ const FixedStakeComponent = ({ isConnected }) => {
       if (stakeContract) {
         try {
           const tokenAddress = await stakeContract.stakingToken();
-          console.log("tokenAddress", tokenAddress);
           setPoolTokenAddress(tokenAddress);
         } catch (err) {
           console.error("Error fetching pool token address:", err);
@@ -193,16 +192,13 @@ const FixedStakeComponent = ({ isConnected }) => {
   useEffect(() => {
     const getUserBalance = async () => {
       try {
-        console.log("poolTokenContract", poolTokenContract);
         if (poolTokenContract && signer) {
           const address = await signer.getAddress();
           const balance = await poolTokenContract.balanceOf(address);
-          console.log(poolTokenContract);
           const formattedBal = ethers.utils.formatUnits(
             balance,
             poolTokenDecimals
           );
-          console.log(formattedBal);
 
           setUserBalance(Number(formattedBal).toFixed(2));
         }
@@ -246,11 +242,9 @@ const FixedStakeComponent = ({ isConnected }) => {
         try {
           const address = await signer.getAddress();
           const stakeIds = await stakeContract.getUserFixedStakes(address);
-          console.log("stakeIds", stakeIds);
           const stakes = await Promise.all(
             stakeIds.map(async (stakeId) => {
               const stake = await stakeContract.fixedStakes(stakeId);
-              console.log("stake", { stake });
 
               const startTime = stake.startTime.toNumber() * 1000; // Convert to milliseconds
 
@@ -275,7 +269,6 @@ const FixedStakeComponent = ({ isConnected }) => {
             })
           );
 
-          console.log("stakes", stakes);
           setFixedStakes(stakes);
 
           // Fetch rewards for each fixed stake
@@ -311,7 +304,6 @@ const FixedStakeComponent = ({ isConnected }) => {
             poolTokenDecimals
           );
 
-          console.log(formattedTVL);
           setTvl(Number(formattedTVL).toFixed(2));
 
           // Fetch APY
