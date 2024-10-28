@@ -776,11 +776,11 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       {/* TVL and APY Information */}
       <div className="flex space-x-6 justify-between items-center mb-6">
         {/* TVL Card */}
-        <div className="flex items-center bg-white px-5 dark:bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
+        <div className="flex items-center  px-5 bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
           <FiTrendingUp size={12} className="text-green-500 mr-3" />
           <div className="">
-            <p className="text-gray-700 dark:text-gray-300 text-center">TVL</p>
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <p className="text-gray-300 text-center">TVL</p>
+            <p className="font-semibold text-white">
               {tvl && swinePrice ? (
                 `$${Number(tvl * swinePrice).toFixed(3)}`
               ) : (
@@ -791,11 +791,11 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         </div>
 
         {/* APY Card */}
-        <div className="flex items-center bg-white px-5 dark:bg-gray-800 rounded-xl shadow-md p-3 text-center">
+        <div className="flex items-center  px-5 bg-gray-800 rounded-xl shadow-md p-3 text-center">
           <FiPercent size={12} className="text-blue-500 mr-3" />
           <div>
-            <p className="text-gray-700 dark:text-gray-300">APY</p>
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <p className="text-gray-300">APY</p>
+            <p className="font-semibold text-white">
               {apy ? `${apy}%` : "10.00%"}
             </p>
           </div>
@@ -817,10 +817,10 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       {/* Enhanced Wallet Segment */}
       {isConnected && (
         <div className="mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
+          <div className="bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
             {/* Wallet Information */}
-            <div className="flex items-center sm:mb-0">
-              <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded-full mr-4">
+            <div className="flex items-center w-fit mx-auto sm:mb-0">
+              <div className="bg-gray-700 p-3 rounded-full mr-4">
                 {/* Wallet Icon */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -837,7 +837,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                 </svg>
               </div>
               <div>
-                <p className="text-gray-800 dark:text-gray-200">
+                <p className="text-gray-200">
                   <strong>Bal:</strong> {userBalance} $SWINE
                 </p>
                 <div className="flex items-center mt-2">
@@ -846,7 +846,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                   </p>
                   <button
                     onClick={copyWalletAddress}
-                    className="ml-2 text-gray-600 dark:text-gray-400 hover:text-[#BB4938] dark:hover:text-[#BB4938] transition-colors duration-200"
+                    className="ml-2 text-gray-400 hover:text-[#BB4938] transition-colors duration-200"
                     aria-label="Copy Wallet Address">
                     <FiCopy size={18} />
                   </button>
@@ -955,7 +955,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
           Your Stake
         </h3>
         {flexibleStake && Number(flexibleStake.amount) > 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+          <div className="bg-gray-800 rounded-xl shadow-md p-6">
             <p className="mt-4 text-center">
               <strong>Accumulated Rewards:</strong>
               <br />{" "}

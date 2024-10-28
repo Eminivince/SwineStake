@@ -636,11 +636,11 @@ const FixedStakeComponent = ({ isConnected }) => {
       {/* TVL and APY Information */}
       <div className="flex space-x-6 justify-between items-center mb-6">
         {/* TVL Card */}
-        <div className="flex items-center bg-white px-5 dark:bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
+        <div className="flex items-center  px-5 bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
           <FiTrendingUp size={12} className="text-green-500 mr-3" />
           <div className="">
-            <p className="text-gray-700 dark:text-gray-300 text-center">TVL</p>
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <p className="text-gray-300 text-center">TVL</p>
+            <p className="font-semibold text-white">
               {tvl && swinePrice ? (
                 `$${Number(tvl * swinePrice).toFixed(3)}`
               ) : (
@@ -651,11 +651,11 @@ const FixedStakeComponent = ({ isConnected }) => {
         </div>
 
         {/* APY Card */}
-        <div className="flex items-center bg-white px-5  dark:bg-gray-800 rounded-xl shadow-md p-3 text-center">
+        <div className="flex items-center px-5  bg-gray-800 rounded-xl shadow-md p-3 text-center">
           <FiPercent size={12} className="text-blue-500 mr-3" />
           <div>
-            <p className="text-gray-700 dark:text-gray-300">APY</p>
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <p className="text-gray-300">APY</p>
+            <p className="font-semibold text-white">
               {apy ? `${apy}%` : "30.00%"}
             </p>
           </div>
@@ -677,10 +677,10 @@ const FixedStakeComponent = ({ isConnected }) => {
       {/* Enhanced Wallet Segment */}
       {isConnected && (
         <div className="mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
+          <div className="bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
             {/* Wallet Information */}
-            <div className="flex items-center sm:mb-0">
-              <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded-full mr-4">
+            <div className="flex items-center sm:mb-0 md: w-fit mx-auto">
+              <div className="bg-gray-700 p-3 rounded-full mr-4">
                 {/* Wallet Icon */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -697,20 +697,20 @@ const FixedStakeComponent = ({ isConnected }) => {
                 </svg>
               </div>
               <div>
-                <p className="text-gray-800 dark:text-gray-200">
+                <p className="text-gray-200">
                   <strong>Bal:</strong> {userBalance} $SWINE
                 </p>
                 {/* New Total Staked Balance Display */}
-                <p className="text-gray-800 dark:text-gray-200 mt-2">
+                <p className="text-gray-200 mt-2">
                   <strong>Staked:</strong> {totalStaked} $SWINE
                 </p>
                 <div className="flex items-center mt-2">
-                  <p className="text-gray-600 dark:text-gray-400 text-sm break-words">
+                  <p className="text-gray-400 text-sm break-words">
                     <strong>Wallet Address:</strong> {truncatedAddress}
                   </p>
                   <button
                     onClick={copyWalletAddress}
-                    className="ml-2 text-gray-600 dark:text-gray-400 hover:text-[#BB4938] dark:hover:text-[#BB4938] transition-colors duration-200"
+                    className="ml-2 text-gray-400 hover:text-[#BB4938] transition-colors duration-200"
                     aria-label="Copy Wallet Address">
                     <FiCopy size={18} />
                   </button>
@@ -835,21 +835,21 @@ const FixedStakeComponent = ({ isConnected }) => {
             {fixedStakes.map((stake) => (
               <div
                 key={stake.stakeId}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col justify-between">
+                className="bg-gray-800 rounded-xl shadow-md p-6 flex flex-col justify-between">
                 <div>
-                  <p className="text-gray-800 dark:text-gray-200 text-lg mb-2">
+                  <p className="text-gray-200 text-lg mb-2">
                     <strong>Stake:</strong> {stake.stakeId}
                   </p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                  <p className="text-gray-400 text-sm mb-1">
                     <strong>Amount:</strong> {stake.amount} Tokens
                   </p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                  <p className="text-gray-400 text-sm mb-1">
                     <strong>Start Time:</strong> {stake.startTime}
                   </p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                  <p className="text-gray-400 text-sm mb-1">
                     <strong>End Time:</strong> {stake.endTime}
                   </p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  <p className="text-gray-400 text-sm">
                     <strong>Expected Reward:</strong>{" "}
                     {stake.expectedTotalReward} Tokens
                   </p>
@@ -888,22 +888,22 @@ const FixedStakeComponent = ({ isConnected }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}>
             <motion.div
-              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg w-11/12 max-w-md mx-auto"
+              className="bg-gray-800 p-6 rounded-xl shadow-lg w-11/12 max-w-md mx-auto"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ duration: 0.3 }}>
-              <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              <h3 className="text-xl font-semibold mb-4 text-white">
                 Confirm Unstake
               </h3>
-              <p className="mb-6 text-gray-700 dark:text-gray-300">
+              <p className="mb-6 text-gray-300">
                 Are you sure you want to unstake?
               </p>
               <div className="flex justify-end space-x-4">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-md text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-700 transition-colors duration-300"
+                  className="bg-gray-600 px-4 py-2 rounded-md text-gray-200 hover:bg-gray-700 transition-colors duration-300"
                   onClick={() => setSelectedFixedStakeId(null)}
                   aria-label="Cancel Unstake">
                   Cancel
@@ -911,7 +911,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-red-600 dark:bg-red-700 px-4 py-2 rounded-md text-white hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-300"
+                  className="bg-red-700 px-4 py-2 rounded-md text-white hover:bg-red-800 transition-colors duration-300"
                   onClick={handleFixedUnstake}
                   disabled={isFixedStaking}
                   aria-label="Confirm Unstake">
@@ -930,7 +930,7 @@ const FixedStakeComponent = ({ isConnected }) => {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="mt-4 p-2 bg-orange-600 dark:bg-red-700 rounded-xl">
+                  className="mt-4 p-2 bg-red-700 rounded-xl">
                   <p className="text-lg text-center text-white">{fixedError}</p>
                 </motion.div>
               )}
