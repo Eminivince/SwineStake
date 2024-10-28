@@ -19,6 +19,8 @@ import axios from "axios";
 const FlexibleStakeComponent = ({ isConnected }) => {
   // State variables
   const [userBalance, setUserBalance] = useState("");
+  const [AMBToUSD, setAMBUSDPrice] = useState("0");
+
   const [swinePrice, setSwinePrice] = useState("");
   const [allowance, setAllowance] = useState(0);
   const [poolTokenAddress, setPoolTokenAddress] = useState("");
@@ -52,6 +54,13 @@ const FlexibleStakeComponent = ({ isConnected }) => {
   const STAKING_DURATION_DAYS = 30; // Staking period in days
   const ANNUAL_REWARD_RATE = 0.1; // 10% annual reward rate
   const BLOCK_TIME_SECONDS = 5.3; // Average block time in seconds (adjust as per your network)
+
+  useEffect(() => {
+    const getPriceUSD = async () => {
+      calculateSwinePriceAndMc();
+    };
+    getPriceUSD();
+  }, [AMBToUSD]);
 
   // Initialize provider and signer
   useEffect(() => {
@@ -105,6 +114,22 @@ const FlexibleStakeComponent = ({ isConnected }) => {
     };
     initializeProvider();
   }, [isConnected]);
+
+  // Calculate Total Staked Balance
+  useEffect(() => {
+    const calculateTotalStaked = () => {
+      if (flexibleStake.amount === "0") {
+        // For flexible staking, there's only one stake
+        setFlexibleUnstakeAmount("0");
+        return;
+      }
+
+      // Optionally, set to staked amount or keep as is
+      // Here, we don't need to calculate total as it's a single stake
+    };
+
+    calculateTotalStaked();
+  }, [flexibleStake]);
 
   // Fetch poolToken address from SwineStake contract
   useEffect(() => {
@@ -266,7 +291,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
 
           // Fetch APY
           const currentAPY = await stakeContract.flexibleAPY(); // Assuming flexibleAPY exists
-          // Assuming APY is returned in basis points (e.g., 300 for 3%)
+          // Assuming APY is returned in basis points (e.g., 100 for 1%)
           const formattedAPY = (currentAPY.toNumber() / 100).toFixed(2);
           setApy(formattedAPY);
         } catch (err) {
@@ -667,6 +692,9 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         "https://api.coingecko.com/api/v3/simple/price?ids=amber&vs_currencies=usd"
       );
       console.log("AMB Price in USD:", response.data.amber.usd);
+      if (response.data.amber.usd) {
+        setAMBUSDPrice(response.data.amber.usd);
+      }
       return response.data.amber.usd;
     } catch (error) {
       console.error("Error fetching AMB price:", error);
@@ -750,13 +778,13 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       {/* Header */}
 
       {/* TVL and APY Information */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex space-x-6 justify-between items-center mb-6">
         {/* TVL Card */}
-        <div className="flex items-center bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:mb-0">
-          <FiTrendingUp size={24} className="text-green-500 mr-3" />
-          <div className="text-center">
-            <p className="text-gray-700 dark:text-gray-300">TVL</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center bg-white px-5 dark:bg-gray-800 rounded-xl shadow-md p-3 sm:mb-0">
+          <FiTrendingUp size={12} className="text-green-500 mr-3" />
+          <div className="">
+            <p className="text-gray-700 dark:text-gray-300 text-center">TVL</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
               {tvl && swinePrice ? (
                 `$${Number(tvl * swinePrice).toFixed(3)}`
               ) : (
@@ -767,12 +795,12 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         </div>
 
         {/* APY Card */}
-        <div className="flex items-center bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
-          <FiPercent size={24} className="text-blue-500 mr-3" />
-          <div className="text-center">
+        <div className="flex items-center bg-white px-5 dark:bg-gray-800 rounded-xl shadow-md p-3 text-center">
+          <FiPercent size={12} className="text-blue-500 mr-3" />
+          <div>
             <p className="text-gray-700 dark:text-gray-300">APY</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {apy ? `${apy}%` : "10%"}
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {apy ? `${apy}%` : "10.00%"}
             </p>
           </div>
         </div>
@@ -795,7 +823,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         <div className="mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
             {/* Wallet Information */}
-            <div className="flex items-center mb-4 sm:mb-0">
+            <div className="flex items-center sm:mb-0">
               <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded-full mr-4">
                 {/* Wallet Icon */}
                 <svg
@@ -846,22 +874,34 @@ const FlexibleStakeComponent = ({ isConnected }) => {
             stakeFlexible();
           }
         }}>
-        {/* Amount Input */}
+        {/* Amount Input with Max Button */}
         <div className="mb-4">
           <label htmlFor="flexibleAmount" className="block mb-2 text-lg">
             Stake Swine:
           </label>
-          <input
-            id="flexibleAmount"
-            type="number"
-            step="any"
-            min="0"
-            placeholder="Enter amount"
-            value={flexibleAmount}
-            onChange={(e) => setFlexibleAmount(e.target.value)}
-            className="w-full p-4 bg-black border border-[#BB4938] rounded-xl text-right text-lg outline-none focus:border-[#ae3d2c] transition duration-150"
-            required
-          />
+          <div className="flex">
+            <input
+              id="flexibleAmount"
+              type="number"
+              step="any"
+              min="0"
+              placeholder="Enter amount"
+              value={flexibleAmount}
+              onChange={(e) => setFlexibleAmount(e.target.value)}
+              className="flex-1 p-4 bg-black border border-[#BB4938] rounded-l-xl text-right text-lg outline-none focus:border-[#ae3d2c] transition duration-150"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setFlexibleAmount(userBalance)}
+              className={`bg-[#BB4938] text-white px-4 py-4 rounded-r-xl hover:bg-[#ae3d2c] transition-colors duration-200 ${
+                Number(userBalance) === 0 ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              aria-label="Set maximum staking amount"
+              disabled={Number(userBalance) === 0}>
+              Max
+            </button>
+          </div>
         </div>
 
         {/* Stake Button */}
@@ -920,21 +960,6 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         </h3>
         {flexibleStake && Number(flexibleStake.amount) > 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-            {/* <div className="flex flex-col sm:flex-row sm:justify-between">
-              <div className="flex items-center">
-                <FiTrendingUp size={20} className="text-green-500 mr-2" />
-                <p className="text-gray-800 dark:text-gray-200">
-                  <strong>Staked:</strong> {flexibleStake.amount} $SWINE
-                </p>
-              </div>
-              <div className="flex items-center">
-                <FiPercent size={20} className="text-blue-500 mr-2" />
-                <p className="text-gray-800 dark:text-gray-200">
-                  <strong>APY:</strong> {apy}%
-                </p>
-              </div>
-            </div> */}
-
             <p className="mt-4 text-center">
               <strong>Accumulated Rewards:</strong>
               <br />{" "}
@@ -984,17 +1009,31 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                 className="block mb-2 text-lg">
                 Unstake Swine:
               </label>
-              <input
-                id="flexibleUnstakeAmount"
-                type="number"
-                step="any"
-                min="0"
-                placeholder="Enter amount"
-                value={flexibleUnstakeAmount}
-                onChange={(e) => setFlexibleUnstakeAmount(e.target.value)}
-                className="w-full p-4 bg-black border border-orange-600 rounded-xl text-right text-lg outline-none focus:border-red-700 transition duration-150"
-                required
-              />
+              <div className="flex">
+                <input
+                  id="flexibleUnstakeAmount"
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder="Enter amount"
+                  value={flexibleUnstakeAmount}
+                  onChange={(e) => setFlexibleUnstakeAmount(e.target.value)}
+                  className="flex-1 p-4 bg-black border border-orange-600 rounded-l-xl text-right text-lg outline-none focus:border-red-700 transition duration-150"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setFlexibleUnstakeAmount(flexibleStake.amount)}
+                  className={`bg-orange-600 text-white px-4 py-4 rounded-r-xl hover:bg-orange-700 transition-colors duration-200 ${
+                    Number(flexibleStake.amount) === 0
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                  aria-label="Set maximum unstaking amount"
+                  disabled={Number(flexibleStake.amount) === 0}>
+                  Max
+                </button>
+              </div>
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1097,29 +1136,6 @@ const FlexibleStakeComponent = ({ isConnected }) => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* TVL and APY Display (Optional) */}
-      {/* If you prefer to display TVL and APY here instead of at the top */}
-      {/* <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-        <div className="flex items-center bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 sm:mb-0">
-          <FiTrendingUp size={24} className="text-green-500 mr-3" />
-          <div>
-            <p className="text-gray-700 dark:text-gray-300">Total Value Locked</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {tvl ? `$${Number(tvl * swinePrice).toFixed(3)}` : <LoadingSpinner />}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
-          <FiPercent size={24} className="text-blue-500 mr-3" />
-          <div>
-            <p className="text-gray-700 dark:text-gray-300">Annual Percentage Yield</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {apy ? `${apy}%` : <LoadingSpinner />}
-            </p>
-          </div>
-        </div>
-      </div> */}
     </div>
   );
 };

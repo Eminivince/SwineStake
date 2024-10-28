@@ -20,6 +20,9 @@ import axios from "axios";
 const FixedStakeComponent = ({ isConnected }) => {
   // State variables
   const [userBalance, setUserBalance] = useState("");
+  const [totalStaked, setTotalStaked] = useState("0");
+  const [AMBToUSD, setAMBUSDPrice] = useState("0");
+
   const [swinePrice, setSwinePrice] = useState("");
   const [allowance, setAllowance] = useState(0);
   const [poolTokenAddress, setPoolTokenAddress] = useState("");
@@ -47,6 +50,13 @@ const FixedStakeComponent = ({ isConnected }) => {
   // Constants (Adjust these based on your contract's parameters)
   const STAKING_DURATION_DAYS = 30; // Staking period in days
   const ANNUAL_REWARD_RATE = 0.3; // 30% annual reward rate
+
+  useEffect(() => {
+    const getPriceUSD = async () => {
+      calculateSwinePriceAndMc();
+    };
+    getPriceUSD();
+  }, [AMBToUSD]);
 
   // Initialize provider and signer
   useEffect(() => {
@@ -95,6 +105,24 @@ const FixedStakeComponent = ({ isConnected }) => {
     };
     initializeProvider();
   }, [isConnected]);
+
+  // Calculate Total Staked Balance
+  useEffect(() => {
+    const calculateTotalStaked = () => {
+      if (fixedStakes.length === 0) {
+        setTotalStaked("0");
+        return;
+      }
+
+      const total = fixedStakes.reduce((acc, stake) => {
+        return acc + parseFloat(stake.amount);
+      }, 0);
+
+      setTotalStaked(total.toFixed(2));
+    };
+
+    calculateTotalStaked();
+  }, [fixedStakes]);
 
   // Fetch poolToken address from SwineStake contract
   useEffect(() => {
@@ -544,6 +572,9 @@ const FixedStakeComponent = ({ isConnected }) => {
 
       console.log(response);
       console.log("AMB Price in USD:", response.data.amber.usd);
+      if (response.data.amber.usd) {
+        setAMBUSDPrice(response.data.amber.usd);
+      }
       return response.data.amber.usd;
     } catch (error) {
       console.error("Error fetching AMB price:", error);
@@ -579,7 +610,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       if (ethPriceInUSD === null) {
         throw new Error("Failed to fetch AMB price in USD.");
       } else {
-        console.log("Failed to fetch AMB price in USD.", ethPriceInUSD);
+        console.log("AMB Price in USD:", ethPriceInUSD);
       }
 
       const swinePriceInAmb =
@@ -635,7 +666,7 @@ const FixedStakeComponent = ({ isConnected }) => {
           <div>
             <p className="text-gray-700 dark:text-gray-300">APY</p>
             <p className="font-semibold text-gray-900 dark:text-white">
-              {apy ? `${apy}%` : "30%"}
+              {apy ? `${apy}%` : "30.00%"}
             </p>
           </div>
         </div>
@@ -658,7 +689,7 @@ const FixedStakeComponent = ({ isConnected }) => {
         <div className="mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between">
             {/* Wallet Information */}
-            <div className="flex items-center mb-4 sm:mb-0">
+            <div className="flex items-center sm:mb-0">
               <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded-full mr-4">
                 {/* Wallet Icon */}
                 <svg
@@ -676,8 +707,12 @@ const FixedStakeComponent = ({ isConnected }) => {
                 </svg>
               </div>
               <div>
-                <p className="text-gray-800 dark:text-gray-200 text-lg">
-                  <strong>Wallet Balance:</strong> {userBalance} $SWINE
+                <p className="text-gray-800 dark:text-gray-200">
+                  <strong>Bal:</strong> {userBalance} $SWINE
+                </p>
+                {/* New Total Staked Balance Display */}
+                <p className="text-gray-800 dark:text-gray-200 mt-2">
+                  <strong>Staked:</strong> {totalStaked} $SWINE
                 </p>
                 <div className="flex items-center mt-2">
                   <p className="text-gray-600 dark:text-gray-400 text-sm break-words">
@@ -723,22 +758,34 @@ const FixedStakeComponent = ({ isConnected }) => {
             stakeFixed();
           }
         }}>
-        {/* Amount Input */}
+        {/* Amount Input with Max Button */}
         <div className="mb-4">
           <label htmlFor="fixedAmount" className="block mb-2 mt-10 text-lg">
             Stake Swine:
           </label>
-          <input
-            id="fixedAmount"
-            type="number"
-            step="any"
-            min="0"
-            placeholder="Enter amount"
-            value={fixedAmount}
-            onChange={(e) => setFixedAmount(e.target.value)}
-            className="w-full p-4 bg-black border border-[#BB4938] rounded-3xl text-right text-lg outline-none focus:border-[#ae3d2c] transition duration-150"
-            required
-          />
+          <div className="flex">
+            <input
+              id="fixedAmount"
+              type="number"
+              step="any"
+              min="0"
+              placeholder="Enter amount"
+              value={fixedAmount}
+              onChange={(e) => setFixedAmount(e.target.value)}
+              className="flex-1 p-4 bg-black border border-[#BB4938] rounded-l-2xl text-right text-lg outline-none focus:border-[#ae3d2c] transition duration-150"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setFixedAmount(userBalance)}
+              className={`bg-[#BB4938] text-white px-4 py-4 rounded-r-2xl hover:bg-[#ae3d2c] transition-colors duration-200 ${
+                Number(userBalance) === 0 ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              aria-label="Set maximum staking amount"
+              disabled={Number(userBalance) === 0}>
+              Max
+            </button>
+          </div>
         </div>
 
         {/* Stake Button */}
