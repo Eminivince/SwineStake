@@ -29,7 +29,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
   const [flexibleAmount, setFlexibleAmount] = useState("");
   const [flexibleStake, setFlexibleStake] = useState({
     amount: "0",
-    lastClaimBlock: 0,
+    lastClaimTime: 0, // Updated from lastClaimBlock to lastClaimTime
   });
   const [flexibleRewards, setFlexibleRewards] = useState("0");
   const [flexibleTimeLeft, setFlexibleTimeLeft] = useState(0); // Time left in seconds
@@ -53,7 +53,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
   // Constants (Adjust these based on your contract's parameters)
   const STAKING_DURATION_DAYS = 30; // Staking period in days
   const ANNUAL_REWARD_RATE = 0.1; // 10% annual reward rate
-  const BLOCK_TIME_SECONDS = 5.3; // Average block time in seconds (adjust as per your network)
+  const SECONDS_PER_BLOCK = 5.3; // Average block time in seconds (adjust as per your network)
 
   useEffect(() => {
     const getPriceUSD = async () => {
@@ -99,7 +99,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
         setAllowance(0);
         setFlexibleStake({
           amount: "0",
-          lastClaimBlock: 0,
+          lastClaimTime: 0, // Updated
         });
         setFlexibleRewards("0");
         setFlexibleTimeLeft(0);
@@ -225,7 +225,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
           if (!stake || stake.amount.eq(0)) {
             setFlexibleStake({
               amount: "0",
-              lastClaimBlock: 0,
+              lastClaimTime: 0, // Updated
             });
             setFlexibleRewards("0");
             setFlexibleTimeLeft(0);
@@ -234,37 +234,34 @@ const FlexibleStakeComponent = ({ isConnected }) => {
 
           setFlexibleStake({
             amount: formatUnits(stake.amount, poolTokenDecimals),
-            lastClaimBlock: stake.lastClaimBlock.toNumber(),
+            lastClaimTime: stake.lastClaimTime.toNumber(), // Updated
           });
 
           // Calculate accumulated rewards
           const reward = await stakeContract.calculateFlexibleReward(address);
           setFlexibleRewards(formatUnits(reward, poolTokenDecimals));
 
-          // Get current block number
-          const currentBlock = await provider.getBlockNumber();
+          // Get current timestamp
+          const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
 
-          // Calculate blocks since last claim
-          const blocksSinceLastClaim =
-            currentBlock - stake.lastClaimBlock.toNumber();
+          // Calculate time since last claim
+          const timeSinceLastClaim =
+            currentTime - stake.lastClaimTime.toNumber();
 
           // Fetch flexibleRewardInterval from contract
           const flexibleRewardInterval =
             await stakeContract.flexibleRewardInterval();
 
-          // Calculate blocks left to complete the next interval
-          const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
-
-          // Convert blocksLeft to seconds
-          const timeLeftSeconds =
-            blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+          // Calculate time left to complete the next interval
+          const timeLeft = flexibleRewardInterval - timeSinceLastClaim;
+          const timeLeftSeconds = timeLeft > 0 ? timeLeft : 0;
           setFlexibleTimeLeft(timeLeftSeconds);
         } catch (err) {
           console.error("Error fetching flexible stake data:", err);
           setFlexibleError("Failed to fetch flexible stake data.");
           setFlexibleStake({
             amount: "0",
-            lastClaimBlock: 0,
+            lastClaimTime: 0, // Updated
           });
           setFlexibleRewards("0");
           setFlexibleTimeLeft(0);
@@ -409,7 +406,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleStake({
         amount: formatUnits(stake.amount, poolTokenDecimals),
-        lastClaimBlock: stake.lastClaimBlock.toNumber(),
+        lastClaimTime: stake.lastClaimTime.toNumber(), // Updated
       });
 
       const reward = await stakeContract.calculateFlexibleReward(
@@ -417,14 +414,14 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleRewards(formatUnits(reward, poolTokenDecimals));
 
-      const currentBlock = await provider.getBlockNumber();
-      const blocksSinceLastClaim =
-        currentBlock - stake.lastClaimBlock.toNumber();
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const timeSinceLastClaim = currentTime - stake.lastClaimTime.toNumber();
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
-      const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
       const timeLeftSeconds =
-        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+        flexibleRewardInterval - timeSinceLastClaim > 0
+          ? flexibleRewardInterval - timeSinceLastClaim
+          : 0;
       setFlexibleTimeLeft(timeLeftSeconds);
 
       setFlexibleAmount("");
@@ -463,7 +460,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleStake({
         amount: formatUnits(stake.amount, poolTokenDecimals),
-        lastClaimBlock: stake.lastClaimBlock.toNumber(),
+        lastClaimTime: stake.lastClaimTime.toNumber(), // Updated
       });
 
       const reward = await stakeContract.calculateFlexibleReward(
@@ -471,14 +468,14 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleRewards(formatUnits(reward, poolTokenDecimals));
 
-      const currentBlock = await provider.getBlockNumber();
-      const blocksSinceLastClaim =
-        currentBlock - stake.lastClaimBlock.toNumber();
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const timeSinceLastClaim = currentTime - stake.lastClaimTime.toNumber();
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
-      const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
       const timeLeftSeconds =
-        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+        flexibleRewardInterval - timeSinceLastClaim > 0
+          ? flexibleRewardInterval - timeSinceLastClaim
+          : 0;
       setFlexibleTimeLeft(timeLeftSeconds);
 
       setIsFlexibleStaking(false);
@@ -526,7 +523,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleStake({
         amount: formatUnits(updatedFlexibleStake.amount, poolTokenDecimals),
-        lastClaimBlock: updatedFlexibleStake.lastClaimBlock.toNumber(),
+        lastClaimTime: updatedFlexibleStake.lastClaimTime.toNumber(), // Updated
       });
 
       // Reset rewards and time left
@@ -535,14 +532,15 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleRewards(formatUnits(updatedReward, poolTokenDecimals));
 
-      const currentBlock = await provider.getBlockNumber();
-      const blocksSinceLastClaim =
-        currentBlock - updatedFlexibleStake.lastClaimBlock.toNumber();
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const timeSinceLastClaim =
+        currentTime - updatedFlexibleStake.lastClaimTime.toNumber();
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
-      const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
       const timeLeftSeconds =
-        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+        flexibleRewardInterval - timeSinceLastClaim > 0
+          ? flexibleRewardInterval - timeSinceLastClaim
+          : 0;
       setFlexibleTimeLeft(timeLeftSeconds);
 
       setFlexibleUnstakeAmount("");
@@ -588,7 +586,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleStake({
         amount: formatUnits(updatedFlexibleStake.amount, poolTokenDecimals),
-        lastClaimBlock: updatedFlexibleStake.lastClaimBlock.toNumber(),
+        lastClaimTime: updatedFlexibleStake.lastClaimTime.toNumber(), // Updated
       });
 
       // Reset rewards and time left
@@ -597,14 +595,15 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       );
       setFlexibleRewards(formatUnits(updatedReward, poolTokenDecimals));
 
-      const currentBlock = await provider.getBlockNumber();
-      const blocksSinceLastClaim =
-        currentBlock - updatedFlexibleStake.lastClaimBlock.toNumber();
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const timeSinceLastClaim =
+        currentTime - updatedFlexibleStake.lastClaimTime.toNumber();
       const flexibleRewardInterval =
         await stakeContract.flexibleRewardInterval();
-      const blocksLeft = flexibleRewardInterval - blocksSinceLastClaim;
       const timeLeftSeconds =
-        blocksLeft > 0 ? blocksLeft * BLOCK_TIME_SECONDS : 0;
+        flexibleRewardInterval - timeSinceLastClaim > 0
+          ? flexibleRewardInterval - timeSinceLastClaim
+          : 0;
       setFlexibleTimeLeft(timeLeftSeconds);
 
       setFlexibleUnstakeAmount("");
@@ -852,7 +851,8 @@ const FlexibleStakeComponent = ({ isConnected }) => {
                   </button>
                 </div>
                 <p className="mt-2">
-                  <strong>Staked:</strong> {flexibleStake?.amount || "0"} $SWINE
+                  <strong>Staked:</strong>{" "}
+                  {Number(flexibleStake?.amount).toFixed(2) || "0"} $SWINE
                 </p>
               </div>
             </div>
