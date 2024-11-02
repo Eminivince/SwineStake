@@ -188,6 +188,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       }
     };
     getUserBalance();
+    handleRefresh();
   }, [poolTokenContract, signer, poolTokenDecimals]);
 
   // Fetch token allowance
