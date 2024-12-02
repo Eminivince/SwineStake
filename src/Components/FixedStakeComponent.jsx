@@ -293,6 +293,7 @@ const FixedStakeComponent = ({ isConnected }) => {
           setFixedRewards(rewards);
         } catch (err) {
           console.error("Error fetching fixed stakes:", err);
+          alert(err);
           setFixedError("Failed to fetch fixed stakes.");
         }
       }
