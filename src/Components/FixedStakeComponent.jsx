@@ -923,47 +923,48 @@ const FixedStakeComponent = ({ isConnected }) => {
         <h3 className="text-xl font-semibold mb-4 mt-12">Your Stakes</h3>
         {fixedStakes.length > 0 ? (
           <div className="grid md:flex md:flex-col grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {fixedStakes.map((stake) => (
-              <div
-                key={stake.stakeId}
-                className="bg-gray-800 rounded-xl shadow-md p-6 flex flex-col justify-between">
-                <div>
-                  <p className="text-gray-200 text-lg mb-2">
-                    <strong>Stake:</strong> {stake.stakeId}
-                  </p>
-                  <p className="text-gray-400 text-sm mb-1">
-                    <strong>Amount:</strong> {stake.amount} $SWINE
-                  </p>
-                  <p className="text-gray-400 text-sm mb-1">
-                    <strong>Start Time:</strong> {stake.startTime}
-                  </p>
-                  <p className="text-gray-400 text-sm mb-1">
-                    <strong>End Time:</strong> {stake.endTime}
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    <strong>Expected Reward:</strong>{" "}
-                    {stake.expectedTotalReward} $SWINE
-                  </p>
+            {fixedStakes.map((stake) =>
+              stake.withdrawn ? (
+                <div></div>
+              ) : (
+                <div
+                  key={stake.stakeId}
+                  className="bg-gray-800 rounded-xl shadow-md p-6 flex flex-col justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm mb-1">
+                      <strong>Amount:</strong> {stake.amount} $SWINE
+                    </p>
+                    <p className="text-gray-400 text-sm mb-1">
+                      <strong>Start Time:</strong> {stake.startTime}
+                    </p>
+                    <p className="text-gray-400 text-sm mb-1">
+                      <strong>End Time:</strong> {stake.endTime}
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      <strong>Expected Reward:</strong>{" "}
+                      {stake.expectedTotalReward} $SWINE
+                    </p>
+                  </div>
+                  <div className="mt-4">
+                    <p
+                      className={`text-sm font-semibold ${
+                        stake.withdrawn ? "text-red-500" : "text-green-500"
+                      } mb-2`}>
+                      {stake.withdrawn ? "Unstaked" : "Active"}
+                    </p>
+                    {!stake.withdrawn && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700 transition-colors duration-300"
+                        onClick={() => setSelectedFixedStakeId(stake.stakeId)}>
+                        Unstake
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-4">
-                  <p
-                    className={`text-sm font-semibold ${
-                      stake.withdrawn ? "text-red-500" : "text-green-500"
-                    } mb-2`}>
-                    {stake.withdrawn ? "Unstaked" : "Active"}
-                  </p>
-                  {!stake.withdrawn && (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700 transition-colors duration-300"
-                      onClick={() => setSelectedFixedStakeId(stake.stakeId)}>
-                      Unstake
-                    </motion.button>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         ) : (
           <p className="text-lg">You have no stake at the moment.</p>
