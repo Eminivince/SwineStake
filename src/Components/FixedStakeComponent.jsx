@@ -134,15 +134,25 @@ const FixedStakeComponent = ({ isConnected }) => {
 
   // **Calculate Total Staked Balance**
   useEffect(() => {
-    const calculateTotalStaked = () => {
+    const calculateTotalStaked = async () => {
       if (fixedStakes.length === 0) {
         setTotalStaked("0");
         return;
       }
 
-      const total = fixedStakes.reduce((acc, stake) => {
-        return acc + parseFloat(stake.amount);
-      }, 0);
+      let total = 0;
+
+      for (const stake of fixedStakes) {
+        const stakeDetails = await stakeContract.fixedStakes(stake.stakeId);
+        const amountStaked = parseFloat(
+          formatUnits(stakeDetails[1], poolTokenDecimals)
+        );
+        const stakeStatus = stakeDetails[3];
+
+        if (!stakeStatus) {
+          total += amountStaked;
+        }
+      }
 
       setTotalStaked(total.toFixed(2));
     };
