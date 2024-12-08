@@ -430,7 +430,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
       alert("Flexible staking successful!");
     } catch (err) {
       console.error("Error during flexible staking:", err);
-      setFlexibleError("An error occurred during flexible staking.");
+      setFlexibleError(err);
       setIsFlexibleStaking(false);
     }
   };
