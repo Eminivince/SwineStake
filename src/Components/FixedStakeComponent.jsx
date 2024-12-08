@@ -534,7 +534,7 @@ const FixedStakeComponent = ({ isConnected }) => {
       }
     } catch (err) {
       console.error("Error during fixed staking:", err);
-      setFixedError(err);
+      setFixedError("An error occurred during fixed staking.");
       setIsFixedStaking(false);
     }
   };
