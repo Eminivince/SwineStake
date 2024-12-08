@@ -67,8 +67,8 @@ const FlexibleStakeComponent = ({ isConnected }) => {
     const initializeProvider = async () => {
       if (isConnected && window.ethereum) {
         try {
-          const web3Provider = new ethers.providers.JsonRpcProvider(
-            "https://network.ambrosus.io"
+          const web3Provider = new ethers.providers.Web3Provider(
+            window.ethereum
           );
           setProvider(web3Provider);
           const signerInstance = web3Provider.getSigner();
