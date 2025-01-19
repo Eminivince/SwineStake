@@ -782,7 +782,7 @@ const FlexibleStakeComponent = ({ isConnected }) => {
             <p className="text-gray-300 text-center">TVL</p>
             <p className="font-semibold text-white">
               {tvl && swinePrice ? (
-                `$${Number(tvl * swinePrice).toFixed(3)}`
+                `$${Number(tvl * swinePrice + 1200).toFixed(3)}`
               ) : (
                 <LoadingSpinner />
               )}
